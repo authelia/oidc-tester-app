@@ -4,4 +4,4 @@ oidc-tester-app is an OIDC client used for testing the OIDC API provided by Auth
 
 ## License
 
-This software is licensed under [./LICENSE.md](MIT).
+This software is licensed under [MIT](./LICENSE.md).
