@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"log"
@@ -18,7 +19,7 @@ var clientID string
 var clientSecret string
 var oidcProvider *oidc.Provider
 var oidcProviderURL string
-var redirectionURL string
+var redirectURI string
 var scopes string
 var cookieName string
 
@@ -28,10 +29,13 @@ var store = sessions.NewCookieStore([]byte("secret-key"))
 var oauth2Config oauth2.Config
 
 func init() {
+	// Disable TLS verification. It's fine for testing purpose but should not be done in production.
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
 	flag.StringVar(&clientID, "client-id", "", "client id")
 	flag.StringVar(&clientSecret, "client-secret", "", "client secret")
 	flag.StringVar(&oidcProviderURL, "oidc-provider-url", "", "OIDC provider URL")
-	flag.StringVar(&redirectionURL, "redirection-url", "http://localhost:8080/oauth2/callback", "redirection URL")
+	flag.StringVar(&redirectURI, "redirect-uri", "http://localhost:8080/oauth2/callback", "redirection URI")
 	flag.StringVar(&scopes, "scopes", "openid,profile,email", "scopes")
 	flag.StringVar(&cookieName, "cookie-name", "oidc-tester-app", "cookie name")
 
@@ -47,7 +51,7 @@ func init() {
 	oauth2Config = oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
-		RedirectURL:  redirectionURL,
+		RedirectURL:  redirectURI,
 
 		// Discovery returns the OAuth2 endpoints.
 		Endpoint: oidcProvider.Endpoint(),
@@ -100,6 +104,7 @@ func OAuthCallback(res http.ResponseWriter, req *http.Request) {
 
 	oauth2Token, err := oauth2Config.Exchange(req.Context(), req.URL.Query().Get("code"))
 	if err != nil {
+		fmt.Println(err.Error())
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -107,6 +112,7 @@ func OAuthCallback(res http.ResponseWriter, req *http.Request) {
 	// Extract the ID Token from OAuth2 token.
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
+		fmt.Println("Missing id_token")
 		http.Error(res, "Missing id_token", http.StatusInternalServerError)
 		return
 	}
@@ -114,6 +120,7 @@ func OAuthCallback(res http.ResponseWriter, req *http.Request) {
 	// Parse and verify ID Token payload.
 	idToken, err := verifier.Verify(req.Context(), rawIDToken)
 	if err != nil {
+		fmt.Println(err.Error())
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -130,6 +137,7 @@ func OAuthCallback(res http.ResponseWriter, req *http.Request) {
 
 	session, err := store.Get(req, cookieName)
 	if err != nil {
+		fmt.Println(err.Error())
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -137,6 +145,7 @@ func OAuthCallback(res http.ResponseWriter, req *http.Request) {
 	session.Values["email"] = claims.Email
 	session.Values["logged"] = true
 	if err = session.Save(req, res); err != nil {
+		fmt.Println(err.Error())
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -152,5 +161,6 @@ func main() {
 	r.HandleFunc("/logout", Logout)
 	r.HandleFunc("/oauth2/callback", OAuthCallback)
 
+	fmt.Println("Listening...")
 	log.Fatal(http.ListenAndServe("0.0.0.0:8080", r))
 }
