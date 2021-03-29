@@ -24,15 +24,15 @@ type Claims struct {
 }
 
 type Options struct {
-	Host         string
-	Port         int
-	ClientID     string
-	ClientSecret string
-	ProviderURL  string
-	RedirectURL  string
-	Hostname     string
-	Scopes       string
-	CookieName   string
-	Filters      []string
-	GroupsFilter []string
+	Host           string
+	Port           int
+	ClientID       string
+	ClientSecret   string
+	Issuer         string
+	RedirectURL    string
+	RedirectDomain string
+	Scopes         string
+	CookieName     string
+	Filters        []string
+	GroupsFilter   []string
 }
