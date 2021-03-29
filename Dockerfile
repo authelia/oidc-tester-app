@@ -5,6 +5,6 @@ COPY . .
 
 RUN go get -d -v ./...
 RUN go install -v ./...
-RUN go build -o oidc-tester-app main.go
+RUN go build -o oidc-tester-app *.go
 
 CMD ["oidc-tester-app"]
