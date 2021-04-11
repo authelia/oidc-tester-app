@@ -33,10 +33,10 @@ func main() {
 
 	rootCmd.Flags().StringVar(&options.Host, "host", "0.0.0.0", "Specifies the host to listen on")
 	rootCmd.Flags().IntVar(&options.Port, "port", 8080, "Specifies the port to listen on")
-	rootCmd.Flags().StringVar(&options.RedirectDomain, "redirect-domain", "localhost", "Specifies the domain used to generate the RedirectURL")
+	rootCmd.Flags().StringVarP(&options.RedirectDomain, "redirect-domain", "d", "localhost", "Specifies the domain used to generate the RedirectURL")
 	rootCmd.Flags().StringVar(&options.ClientID, "id", "", "Specifies the OpenID Connect Client ID")
-	rootCmd.Flags().StringVar(&options.ClientSecret, "secret", "", "Specifies the OpenID Connect Client Secret")
-	rootCmd.Flags().StringVar(&options.Issuer, "issuer", "", "Specifies the URL for the OpenID Connect OP")
+	rootCmd.Flags().StringVarP(&options.ClientSecret, "secret", "s", "", "Specifies the OpenID Connect Client Secret")
+	rootCmd.Flags().StringVarP(&options.Issuer, "issuer", "i", "", "Specifies the URL for the OpenID Connect OP")
 	rootCmd.Flags().StringVar(&options.Scopes, "scopes", "openid,profile,email,groups", "Specifies the OpenID Connect scopes to request")
 	rootCmd.Flags().StringVar(&options.CookieName, "cookie-name", "oidc-client", "Specifies the storage cookie name to use")
 	rootCmd.Flags().StringSliceVar(&options.Filters, "filters", []string{}, "If specified filters the specified text from html output (not json) out of the email addresses, display names, audience, etc")
@@ -79,7 +79,7 @@ func root(cmd *cobra.Command, args []string) {
 	r.HandleFunc("/oauth2/callback", OAuthCallbackHandler)
 	r.HandleFunc("/json", JSONHandler)
 
-	fmt.Printf("Server Address http://%s:%d/\n\nListening...", options.Host, options.Port)
+	fmt.Printf("Server Address http://%s:%d/ (%s)\n\nListening...", options.RedirectDomain, options.Port, options.Host)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", options.Host, options.Port), r))
 }

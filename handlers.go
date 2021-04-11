@@ -67,7 +67,7 @@ func IndexHandler(res http.ResponseWriter, req *http.Request) {
 		"<p>Nonce: %s</p>"+
 		"<p>Email: %s</p>"+
 		"<p>Email Verified: %v</p>"+
-		"<p>GroupsFilter: %s</p>"+
+		"<p>Groups: %s</p>"+
 		"<p>Name: %s</p>"+
 		"<p>Raw: %s</p>",
 		filterText(claims.Subject, options.Filters),
