@@ -262,6 +262,8 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 
 	if redirectUrl, ok := session.Values["redirect-url"].(string); ok {
 		http.Redirect(res, req, redirectUrl, http.StatusFound)
+
+		return
 	}
 
 	http.Redirect(res, req, "/", http.StatusFound)
