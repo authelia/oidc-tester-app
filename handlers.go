@@ -11,8 +11,10 @@ import (
 func jsonHandler(res http.ResponseWriter, req *http.Request) {
 	res.Header().Add("Content-Type", "application/json")
 	session, err := store.Get(req, options.CookieName)
+
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
@@ -20,19 +22,23 @@ func jsonHandler(res http.ResponseWriter, req *http.Request) {
 
 	if err := json.NewEncoder(res).Encode(claims); err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 }
 
 func indexHandler(res http.ResponseWriter, req *http.Request) {
 	session, err := store.Get(req, options.CookieName)
+
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
 	if logged, ok := session.Values["logged"].(bool); !ok || !logged {
 		fmt.Fprintf(res, "<p>Not logged yet...</p> <a href=\"/login\">Log in</a>")
+
 		return
 	}
 
@@ -96,8 +102,10 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 
 func protectedStandardHandler(res http.ResponseWriter, req *http.Request) {
 	session, err := store.Get(req, options.CookieName)
+
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
@@ -106,10 +114,12 @@ func protectedStandardHandler(res http.ResponseWriter, req *http.Request) {
 		if err = session.Save(req, res); err != nil {
 			fmt.Println(err.Error())
 			http.Error(res, err.Error(), http.StatusInternalServerError)
+
 			return
 		}
 
 		http.Redirect(res, req, oauth2Config.AuthCodeURL("random-string-here"), http.StatusFound)
+
 		return
 	}
 
@@ -120,13 +130,16 @@ func protectedStandardHandler(res http.ResponseWriter, req *http.Request) {
 
 func protectedGroupHandler(res http.ResponseWriter, req *http.Request) {
 	session, err := store.Get(req, options.CookieName)
+
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
 	if logged, ok := session.Values["logged"].(bool); !ok || !logged {
 		session.Values["redirect-url"] = req.URL.Path
+
 		if err = session.Save(req, res); err != nil {
 			fmt.Println(err.Error())
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -134,6 +147,7 @@ func protectedGroupHandler(res http.ResponseWriter, req *http.Request) {
 		}
 
 		http.Redirect(res, req, oauth2Config.AuthCodeURL("random-string-here"), http.StatusFound)
+
 		return
 	}
 
@@ -146,6 +160,7 @@ func protectedGroupHandler(res http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(res, "<p>This is the protected group endpoint</p>"+
 			"<p id=\"message\">Access Granted. You have the group '%s'.</p>"+
 			"<p id=\"access\">1</p>", vars["group"])
+
 		return
 	}
 	fmt.Fprintf(res, "<p>This is the protected group endpoint</p>"+
@@ -155,13 +170,16 @@ func protectedGroupHandler(res http.ResponseWriter, req *http.Request) {
 
 func protectedUserHandler(res http.ResponseWriter, req *http.Request) {
 	session, err := store.Get(req, options.CookieName)
+
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
 	if logged, ok := session.Values["logged"].(bool); !ok || !logged {
 		session.Values["redirect-url"] = req.URL.Path
+
 		if err = session.Save(req, res); err != nil {
 			fmt.Println(err.Error())
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -169,6 +187,7 @@ func protectedUserHandler(res http.ResponseWriter, req *http.Request) {
 		}
 
 		http.Redirect(res, req, oauth2Config.AuthCodeURL("random-string-here"), http.StatusFound)
+
 		return
 	}
 
@@ -189,13 +208,31 @@ func protectedUserHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func loginHandler(res http.ResponseWriter, req *http.Request) {
+	session, err := store.Get(req, options.CookieName)
+
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
+	session.Values["redirect-url"] = "/"
+	if err = session.Save(req, res); err != nil {
+		fmt.Println(err.Error())
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
 	http.Redirect(res, req, oauth2Config.AuthCodeURL("random-string-here"), http.StatusFound)
 }
 
 func logoutHandler(res http.ResponseWriter, req *http.Request) {
 	session, err := store.Get(req, options.CookieName)
+
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
@@ -204,6 +241,7 @@ func logoutHandler(res http.ResponseWriter, req *http.Request) {
 
 	if err := session.Save(req, res); err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
@@ -212,11 +250,12 @@ func logoutHandler(res http.ResponseWriter, req *http.Request) {
 
 func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 	// The state should be checked here in production
-
 	oauth2Token, err := oauth2Config.Exchange(req.Context(), req.URL.Query().Get("code"))
+
 	if err != nil {
 		fmt.Println(err.Error())
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
@@ -225,6 +264,7 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 	if !ok {
 		fmt.Println("Missing id_token")
 		http.Error(res, "Missing id_token", http.StatusInternalServerError)
+
 		return
 	}
 
@@ -233,6 +273,7 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		fmt.Println(err.Error())
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
@@ -241,6 +282,7 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 
 	if err := idToken.Claims(&claims); err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
@@ -248,15 +290,18 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		fmt.Println(err.Error())
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
 	session.Values["claims"] = claims
 	session.Values["logged"] = true
 	session.Values["idToken"] = rawIDToken
+
 	if err = session.Save(req, res); err != nil {
 		fmt.Println(err.Error())
 		http.Error(res, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
