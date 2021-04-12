@@ -78,9 +78,8 @@ func root(cmd *cobra.Command, args []string) {
 	r.HandleFunc("/logout", logoutHandler)
 	r.HandleFunc("/oauth2/callback", oauthCallbackHandler)
 	r.HandleFunc("/json", jsonHandler)
-	r.HandleFunc("/protected", protectedStandardHandler)
-	r.HandleFunc("/protected/group/{group}", protectedGroupHandler)
-	r.HandleFunc("/protected/user/{user}", protectedUserHandler)
+	r.HandleFunc("/protected", protectedBasicHandler)
+	r.HandleFunc("/protected/{type:group|user}/{group}", protectedAdvancedHandler)
 
 	fmt.Printf("Server Address http://%s:%d/ (%s)\n\nListening...", options.RedirectDomain, options.Port, options.Host)
 

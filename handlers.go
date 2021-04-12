@@ -100,7 +100,7 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 	)
 }
 
-func protectedStandardHandler(res http.ResponseWriter, req *http.Request) {
+func protectedBasicHandler(res http.ResponseWriter, req *http.Request) {
 	session, err := store.Get(req, options.CookieName)
 
 	if err != nil {
@@ -128,7 +128,7 @@ func protectedStandardHandler(res http.ResponseWriter, req *http.Request) {
 		"<p id=\"protected-secret\">2511140547</p>")
 }
 
-func protectedGroupHandler(res http.ResponseWriter, req *http.Request) {
+func protectedAdvancedHandler(res http.ResponseWriter, req *http.Request) {
 	session, err := store.Get(req, options.CookieName)
 
 	if err != nil {
@@ -155,6 +155,27 @@ func protectedGroupHandler(res http.ResponseWriter, req *http.Request) {
 	claims := session.Values["claims"].(Claims)
 
 	res.Header().Add("Content-Type", "text/html")
+
+	if vars["type"] == "user" {
+		if strings.EqualFold(vars["user"], claims.Subject) {
+			fmt.Fprintf(res, "<p>This is the protected user endpoint</p>"+
+				"<p id=\"message\">Access Granted. Your username is '%s'.</p>"+
+				"<p id=\"access\">1</p>", vars["user"])
+
+			return
+		}
+		fmt.Fprintf(res, "<p>This is the protected user endpoint</p>"+
+			"<p id=\"message\">Access Denied. Requires user '%s'.</p>"+
+			"<p id=\"access\">0</p>", vars["user"])
+
+		return
+	}
+
+	if vars["type"] != "group" {
+		fmt.Fprintf(res, "<p>This is the protected invalid endpoint</p>")
+
+		return
+	}
 
 	if isStringInSlice(vars["group"], claims.Groups) {
 		fmt.Fprintf(res, "<p>This is the protected group endpoint</p>"+
@@ -166,45 +187,6 @@ func protectedGroupHandler(res http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(res, "<p>This is the protected group endpoint</p>"+
 		"<p id=\"message\">Access Denied. Requires group '%s'.</p>"+
 		"<p id=\"access\">0</p>", vars["group"])
-}
-
-func protectedUserHandler(res http.ResponseWriter, req *http.Request) {
-	session, err := store.Get(req, options.CookieName)
-
-	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
-
-	if logged, ok := session.Values["logged"].(bool); !ok || !logged {
-		session.Values["redirect-url"] = req.URL.Path
-
-		if err = session.Save(req, res); err != nil {
-			fmt.Println(err.Error())
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		http.Redirect(res, req, oauth2Config.AuthCodeURL("random-string-here"), http.StatusFound)
-
-		return
-	}
-
-	vars := mux.Vars(req)
-	claims := session.Values["claims"].(Claims)
-
-	res.Header().Add("Content-Type", "text/html")
-
-	if strings.EqualFold(vars["user"], claims.Subject) {
-		fmt.Fprintf(res, "<p>This is the protected user endpoint</p>"+
-			"<p id=\"message\">Access Granted. Your username is '%s'.</p>"+
-			"<p id=\"access\">1</p>", vars["user"])
-		return
-	}
-	fmt.Fprintf(res, "<p>This is the protected user endpoint</p>"+
-		"<p id=\"message\">Access Denied. Requires user '%s'.</p>"+
-		"<p id=\"access\">0</p>", vars["user"])
 }
 
 func loginHandler(res http.ResponseWriter, req *http.Request) {
