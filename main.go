@@ -73,11 +73,14 @@ func root(cmd *cobra.Command, args []string) {
 	}
 
 	r := mux.NewRouter()
-	r.HandleFunc("/", IndexHandler)
-	r.HandleFunc("/login", LoginHandler)
-	r.HandleFunc("/logout", LogoutHandler)
-	r.HandleFunc("/oauth2/callback", OAuthCallbackHandler)
-	r.HandleFunc("/json", JSONHandler)
+	r.HandleFunc("/", indexHandler)
+	r.HandleFunc("/login", loginHandler)
+	r.HandleFunc("/logout", logoutHandler)
+	r.HandleFunc("/oauth2/callback", oauthCallbackHandler)
+	r.HandleFunc("/json", jsonHandler)
+	r.HandleFunc("/protected", protectedStandardHandler)
+	r.HandleFunc("/protected/group/{group}", protectedGroupHandler)
+	r.HandleFunc("/protected/user/{user}", protectedUserHandler)
 
 	fmt.Printf("Server Address http://%s:%d/ (%s)\n\nListening...", options.RedirectDomain, options.Port, options.Host)
 

@@ -3,11 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"net/http"
 	"strings"
 )
 
-func JSONHandler(res http.ResponseWriter, req *http.Request) {
+func jsonHandler(res http.ResponseWriter, req *http.Request) {
 	res.Header().Add("Content-Type", "application/json")
 	session, err := store.Get(req, options.CookieName)
 	if err != nil {
@@ -23,7 +24,7 @@ func JSONHandler(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func IndexHandler(res http.ResponseWriter, req *http.Request) {
+func indexHandler(res http.ResponseWriter, req *http.Request) {
 	session, err := store.Get(req, options.CookieName)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -93,11 +94,105 @@ func IndexHandler(res http.ResponseWriter, req *http.Request) {
 	)
 }
 
-func LoginHandler(res http.ResponseWriter, req *http.Request) {
+func protectedStandardHandler(res http.ResponseWriter, req *http.Request) {
+	session, err := store.Get(req, options.CookieName)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if logged, ok := session.Values["logged"].(bool); !ok || !logged {
+		session.Values["redirect-url"] = req.URL.Path
+		if err = session.Save(req, res); err != nil {
+			fmt.Println(err.Error())
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(res, req, oauth2Config.AuthCodeURL("random-string-here"), http.StatusFound)
+		return
+	}
+
+	res.Header().Add("Content-Type", "text/html")
+	fmt.Fprintf(res, "<p>This is the protected endpoint</p>"+
+		"<p id=\"protected-secret\">2511140547</p>")
+}
+
+func protectedGroupHandler(res http.ResponseWriter, req *http.Request) {
+	session, err := store.Get(req, options.CookieName)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if logged, ok := session.Values["logged"].(bool); !ok || !logged {
+		session.Values["redirect-url"] = req.URL.Path
+		if err = session.Save(req, res); err != nil {
+			fmt.Println(err.Error())
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(res, req, oauth2Config.AuthCodeURL("random-string-here"), http.StatusFound)
+		return
+	}
+
+	vars := mux.Vars(req)
+	claims := session.Values["claims"].(Claims)
+
+	res.Header().Add("Content-Type", "text/html")
+
+	if isStringInSlice(vars["group"], claims.Groups) {
+		fmt.Fprintf(res, "<p>This is the protected group endpoint</p>"+
+			"<p id=\"message\">Access Granted. You have the group '%s'.</p>"+
+			"<p id=\"access\">1</p>", vars["group"])
+		return
+	}
+	fmt.Fprintf(res, "<p>This is the protected group endpoint</p>"+
+		"<p id=\"message\">Access Denied. Requires group '%s'.</p>"+
+		"<p id=\"access\">0</p>", vars["group"])
+}
+
+func protectedUserHandler(res http.ResponseWriter, req *http.Request) {
+	session, err := store.Get(req, options.CookieName)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if logged, ok := session.Values["logged"].(bool); !ok || !logged {
+		session.Values["redirect-url"] = req.URL.Path
+		if err = session.Save(req, res); err != nil {
+			fmt.Println(err.Error())
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(res, req, oauth2Config.AuthCodeURL("random-string-here"), http.StatusFound)
+		return
+	}
+
+	vars := mux.Vars(req)
+	claims := session.Values["claims"].(Claims)
+
+	res.Header().Add("Content-Type", "text/html")
+
+	if strings.EqualFold(vars["user"], claims.Subject) {
+		fmt.Fprintf(res, "<p>This is the protected user endpoint</p>"+
+			"<p id=\"message\">Access Granted. Your username is '%s'.</p>"+
+			"<p id=\"access\">1</p>", vars["user"])
+		return
+	}
+	fmt.Fprintf(res, "<p>This is the protected user endpoint</p>"+
+		"<p id=\"message\">Access Denied. Requires user '%s'.</p>"+
+		"<p id=\"access\">0</p>", vars["user"])
+}
+
+func loginHandler(res http.ResponseWriter, req *http.Request) {
 	http.Redirect(res, req, oauth2Config.AuthCodeURL("random-string-here"), http.StatusFound)
 }
 
-func LogoutHandler(res http.ResponseWriter, req *http.Request) {
+func logoutHandler(res http.ResponseWriter, req *http.Request) {
 	session, err := store.Get(req, options.CookieName)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -112,10 +207,10 @@ func LogoutHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(res, req, "/", 302)
+	http.Redirect(res, req, "/", http.StatusFound)
 }
 
-func OAuthCallbackHandler(res http.ResponseWriter, req *http.Request) {
+func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 	// The state should be checked here in production
 
 	oauth2Token, err := oauth2Config.Exchange(req.Context(), req.URL.Query().Get("code"))
@@ -165,5 +260,9 @@ func OAuthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(res, req, "/", 302)
+	if redirectUrl, ok := session.Values["redirect-url"].(string); ok {
+		http.Redirect(res, req, redirectUrl, http.StatusFound)
+	}
+
+	http.Redirect(res, req, "/", http.StatusFound)
 }
