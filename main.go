@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"encoding/gob"
 	"fmt"
 	"log"
 	"net/http"
@@ -24,12 +23,14 @@ var store = sessions.NewCookieStore([]byte("secret-key"))
 
 var oauth2Config oauth2.Config
 
-func main() {
-	gob.Register(Claims{})
+var claimsStorage = map[string]Claims{}
+var rawIDTokenStorage = map[string]string{}
 
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+func main() {
 
 	rootCmd := &cobra.Command{Use: "oidc-tester-app", Run: root}
+
+	disableTLSVerify := false
 
 	rootCmd.Flags().StringVar(&options.Host, "host", "0.0.0.0", "Specifies the host to listen on")
 	rootCmd.Flags().IntVar(&options.Port, "port", 8080, "Specifies the port to listen on")
@@ -41,6 +42,11 @@ func main() {
 	rootCmd.Flags().StringVar(&options.CookieName, "cookie-name", "oidc-client", "Specifies the storage cookie name to use")
 	rootCmd.Flags().StringSliceVar(&options.Filters, "filters", []string{}, "If specified filters the specified text from html output (not json) out of the email addresses, display names, audience, etc")
 	rootCmd.Flags().StringSliceVar(&options.GroupsFilter, "groups-filter", []string{}, "If specified only shows the groups in this list")
+	rootCmd.Flags().BoolVarP(&disableTLSVerify, "tls-skip-verify", "x", disableTLSVerify, "If set will not check TLS certs")
+
+	if disableTLSVerify {
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
 
 	_ = rootCmd.MarkFlagRequired("id")
 	_ = rootCmd.MarkFlagRequired("secret")

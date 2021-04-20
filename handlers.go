@@ -18,7 +18,8 @@ func jsonHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	claims := session.Values["claims"].(Claims)
+	jwtIdentifier := session.Values["jwt_identifier"].(string)
+	claims := claimsStorage[jwtIdentifier]
 
 	if err := json.NewEncoder(res).Encode(claims); err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -42,7 +43,11 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	claims := session.Values["claims"].(Claims)
+	jwtIdentifier := session.Values["jwt_identifier"].(string)
+	var claims Claims
+	if c, ok := claimsStorage[jwtIdentifier]; ok {
+		claims = c
+	}
 
 	var groups []string
 	if len(options.GroupsFilter) >= 1 {
@@ -96,7 +101,7 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 		claims.EmailVerified,
 		strings.Join(groups, ", "),
 		filterText(claims.Name, options.Filters),
-		session.Values["idToken"],
+		rawIDTokenStorage[jwtIdentifier],
 	)
 }
 
@@ -152,7 +157,8 @@ func protectedAdvancedHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	vars := mux.Vars(req)
-	claims := session.Values["claims"].(Claims)
+	jwtIdentifier := session.Values["jwt_identifier"].(string)
+	claims := claimsStorage[jwtIdentifier]
 
 	res.Header().Add("Content-Type", "text/html")
 
@@ -276,9 +282,11 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session.Values["claims"] = claims
+	claimsStorage[claims.JWTIdentifier] = claims
+	rawIDTokenStorage[claims.JWTIdentifier] = rawIDToken
+
+	session.Values["jwt_identifier"] = claims.JWTIdentifier
 	session.Values["logged"] = true
-	session.Values["idToken"] = rawIDToken
 
 	if err = session.Save(req, res); err != nil {
 		fmt.Println(err.Error())
