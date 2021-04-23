@@ -53,7 +53,7 @@ func main() {
 }
 
 func root(cmd *cobra.Command, args []string) {
-	options.RedirectURL = fmt.Sprintf("http://%s:%d/oauth2/callback", options.RedirectDomain, options.Port)
+	options.RedirectURL = fmt.Sprintf("https://%s:%d/oauth2/callback", options.RedirectDomain, options.Port)
 
 	fmt.Printf("Provider URL: %s.\nRedirect URL: %s.\n", options.Issuer, options.RedirectURL)
 
