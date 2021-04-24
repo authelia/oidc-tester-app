@@ -24,6 +24,8 @@ var store = sessions.NewCookieStore([]byte("secret-key"))
 
 var oauth2Config oauth2.Config
 
+var rawTokens = make(map[string]string)
+
 func main() {
 	gob.Register(Claims{})
 
@@ -33,6 +35,7 @@ func main() {
 
 	rootCmd.Flags().StringVar(&options.Host, "host", "0.0.0.0", "Specifies the host to listen on")
 	rootCmd.Flags().IntVar(&options.Port, "port", 8080, "Specifies the port to listen on")
+	rootCmd.Flags().StringVar(&options.RedirectScheme, "redirect-scheme", "https", "Specifies the scheme used to generate the RedirectURL")
 	rootCmd.Flags().StringVarP(&options.RedirectDomain, "redirect-domain", "d", "localhost", "Specifies the domain used to generate the RedirectURL")
 	rootCmd.Flags().StringVar(&options.ClientID, "id", "", "Specifies the OpenID Connect Client ID")
 	rootCmd.Flags().StringVarP(&options.ClientSecret, "secret", "s", "", "Specifies the OpenID Connect Client Secret")
@@ -53,7 +56,7 @@ func main() {
 }
 
 func root(cmd *cobra.Command, args []string) {
-	options.RedirectURL = fmt.Sprintf("https://%s:%d/oauth2/callback", options.RedirectDomain, options.Port)
+	options.RedirectURL = fmt.Sprintf("%s://%s:%d/oauth2/callback", options.RedirectScheme, options.RedirectDomain, options.Port)
 
 	fmt.Printf("Provider URL: %s.\nRedirect URL: %s.\n", options.Issuer, options.RedirectURL)
 

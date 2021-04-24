@@ -29,6 +29,7 @@ type Options struct {
 	ClientID       string
 	ClientSecret   string
 	Issuer         string
+	RedirectScheme string
 	RedirectURL    string
 	RedirectDomain string
 	Scopes         string
