@@ -235,7 +235,7 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 	oauth2Token, err := oauth2Config.Exchange(req.Context(), req.URL.Query().Get("code"))
 
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Errorf("unable to exchange authorization code for tokens: %w", err)
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 
 		return
@@ -244,7 +244,7 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 	// Extract the ID Token from OAuth2 token.
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
-		fmt.Println("Missing id_token")
+		fmt.Errorf("missing id token")
 		http.Error(res, "Missing id_token", http.StatusInternalServerError)
 
 		return
@@ -253,7 +253,7 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 	// Parse and verify ID Token payload.
 	idToken, err := verifier.Verify(req.Context(), rawIDToken)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Errorf("unable to verify id token or token is invalid: %w", err)
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 
 		return
@@ -263,6 +263,7 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 	claims := Claims{}
 
 	if err := idToken.Claims(&claims); err != nil {
+		fmt.Errorf("unable to retrieve id token claims: %w", err)
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 
 		return
@@ -270,7 +271,7 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 
 	session, err := store.Get(req, options.CookieName)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Errorf("unable to get session from cookie: %w", err)
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 
 		return
@@ -281,7 +282,7 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 	session.Values["idToken"] = rawIDToken
 
 	if err = session.Save(req, res); err != nil {
-		fmt.Println(err.Error())
+		fmt.Errorf("unable to save session: %w", err)
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 
 		return
