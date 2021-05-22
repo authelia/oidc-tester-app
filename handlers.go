@@ -37,7 +37,7 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if logged, ok := session.Values["logged"].(bool); !ok || !logged {
-		fmt.Fprintf(res, "<p>Not logged yet...</p> <a href=\"/login\">Log in</a>")
+		fmt.Fprintf(res, "<p>Not logged yet...</p> <a id=\"login-link\" href=\"/login\">Log in</a>")
 
 		return
 	}
@@ -58,25 +58,25 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 	res.Header().Add("Content-Type", "text/html")
 	fmt.Fprintf(res, "<p>Logged in as %s!</p>"+
 		"<p><a href=\"/logout\">Log out</a></p>"+
-		"<p>Access Token Hash: %s</p>"+
-		"<p>Code Hash: %s</p>"+
-		"<p>Authentication Context Class Reference: %s</p>"+
-		"<p>Authentication Methods Reference: %s</p>"+
-		"<p>Audience: %s</p>"+
-		"<p>Expires: %d</p>"+
-		"<p>Issue Time: %d</p>"+
-		"<p>Requested At: %d</p>"+
-		"<p>Authorize Time: %d</p>"+
-		"<p>Not Before: %d</p>"+
-		"<p>Issuer: %s</p>"+
-		"<p>JWT ID: %s</p>"+
-		"<p>Subject: %s</p>"+
-		"<p>Nonce: %s</p>"+
-		"<p>Email: %s</p>"+
-		"<p>Email Verified: %v</p>"+
-		"<p>Groups: %s</p>"+
-		"<p>Name: %s</p>"+
-		"<p>Raw: %s</p>",
+		"<p>Access Token Hash: <span id=\"oidc-access-token-hash\">%s</span></p>"+
+		"<p>Code Hash: <span id=\"oidc-code-hash\">%s</span></p>"+
+		"<p>Authentication Context Class Reference: <span id=\"oidc-auth-ctx-class-ref\">%s</span></p>"+
+		"<p>Authentication Methods Reference: <span id=\"oidc-auth-method-ref\">%s</span></p>"+
+		"<p>Audience: <span id=\"oidc-audience\">%s</span></p>"+
+		"<p>Expires: <span id=\"oidc-expires\">%f</span></p>"+
+		"<p>Issue Time: <span id=\"oidc-issue-time\">%f</span></p>"+
+		"<p>Requested At: <span id=\"requested-at\">%f</span></p>"+
+		"<p>Authorize Time: <span id=\"oidc-auth-at\">%f</span></p>"+
+		"<p>Not Before: <span id=\"oidc-not-before\">%f</span></p>"+
+		"<p>Issuer: <span id=\"oidc-issuer\">%s</span></p>"+
+		"<p>JWT ID: <span id=\"oidc-jwt-id\">%s</span></p>"+
+		"<p>Subject: <span id=\"oidc-subj\">%s</span></p>"+
+		"<p>Nonce: <span id=\"oidc-nonce\">%s</span></p>"+
+		"<p>Email: <span id=\"oidc-email\">%s</span></p>"+
+		"<p>Email Verified: <span id=\"oidc-email-verified\">%v</span></p>"+
+		"<p>Groups: <span id=\"oidc-groups\">%s</span></p>"+
+		"<p>Name: <span id=\"oidc-name\">%s</span></p>"+
+		"<p>Raw: <span id=\"oidc-raw\">%s</span></p>",
 		filterText(claims.Subject, options.Filters),
 		claims.AccessTokenHash,
 		claims.CodeHash,
@@ -96,7 +96,7 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 		claims.EmailVerified,
 		strings.Join(groups, ", "),
 		filterText(claims.Name, options.Filters),
-		session.Values["idToken"],
+		rawTokens[claims.JWTIdentifier],
 	)
 }
 
@@ -124,7 +124,7 @@ func protectedBasicHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	res.Header().Add("Content-Type", "text/html")
-	fmt.Fprintf(res, "<p>This is the protected endpoint</p>"+
+	fmt.Fprintf(res, "<p id=\"message\">This is the protected endpoint</p>"+
 		"<p id=\"protected-secret\">2511140547</p>")
 }
 
@@ -158,35 +158,35 @@ func protectedAdvancedHandler(res http.ResponseWriter, req *http.Request) {
 
 	if vars["type"] == "user" {
 		if strings.EqualFold(vars["user"], claims.Subject) {
-			fmt.Fprintf(res, "<p>This is the protected user endpoint</p>"+
-				"<p id=\"message\">Access Granted. Your username is '%s'.</p>"+
-				"<p id=\"access\">1</p>", vars["user"])
+			fmt.Fprintf(res, "<p id=\"message\">This is the protected user endpoint</p>"+
+				"<p id=\"message-grant\">Access Granted. Your username is '<span id=\"user\">%s</span>'.</p>"+
+				"<p id=\"access-granted\">1</p>", vars["user"])
 
 			return
 		}
-		fmt.Fprintf(res, "<p>This is the protected user endpoint</p>"+
-			"<p id=\"message\">Access Denied. Requires user '%s'.</p>"+
-			"<p id=\"access\">0</p>", vars["user"])
+		fmt.Fprintf(res, "<p id=\"message\">This is the protected user endpoint</p>"+
+			"<p id=\"grant-message\">Access Denied. Requires user '<span id=\"user\">%s</span>'.</p>"+
+			"<p id=\"access-granted\">0</p>", vars["user"])
 
 		return
 	}
 
 	if vars["type"] != "group" {
-		fmt.Fprintf(res, "<p>This is the protected invalid endpoint</p>")
+		fmt.Fprintf(res, "<p id=\"message\">This is the protected invalid endpoint</p>")
 
 		return
 	}
 
 	if isStringInSlice(vars["group"], claims.Groups) {
-		fmt.Fprintf(res, "<p>This is the protected group endpoint</p>"+
-			"<p id=\"message\">Access Granted. You have the group '%s'.</p>"+
-			"<p id=\"access\">1</p>", vars["group"])
+		fmt.Fprintf(res, "<p id=\"message\">This is the protected group endpoint</p>"+
+			"<p id=\"grant-message\">Access Granted. You have the group '<span id=\"group\">%s</span>'.</p>"+
+			"<p id=\"access-granted\">1</p>", vars["group"])
 
 		return
 	}
-	fmt.Fprintf(res, "<p>This is the protected group endpoint</p>"+
-		"<p id=\"message\">Access Denied. Requires group '%s'.</p>"+
-		"<p id=\"access\">0</p>", vars["group"])
+	fmt.Fprintf(res, "<p id=\"message\">This is the protected group endpoint</p>"+
+		"<p id=\"grant-message\">Access Denied. Requires group '<span id=\"group\">%s</span>'.</p>"+
+		"<p id=\"access-granted\">0</p>", vars["group"])
 }
 
 func loginHandler(res http.ResponseWriter, req *http.Request) {
@@ -279,7 +279,7 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 
 	session.Values["claims"] = claims
 	session.Values["logged"] = true
-	session.Values["idToken"] = rawIDToken
+	rawTokens[claims.JWTIdentifier] = rawIDToken
 
 	if err = session.Save(req, res); err != nil {
 		fmt.Errorf("unable to save session: %w", err)
