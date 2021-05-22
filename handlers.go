@@ -63,11 +63,11 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 		"<p>Authentication Context Class Reference: <span id=\"oidc-auth-ctx-class-ref\">%s</span></p>"+
 		"<p>Authentication Methods Reference: <span id=\"oidc-auth-method-ref\">%s</span></p>"+
 		"<p>Audience: <span id=\"oidc-audience\">%s</span></p>"+
-		"<p>Expires: <span id=\"oidc-expires\">%d</span></p>"+
-		"<p>Issue Time: <span id=\"oidc-issue-time\">%d</span></p>"+
-		"<p>Requested At: <span id=\"requested-at\">%d</span></p>"+
-		"<p>Authorize Time: <span id=\"oidc-auth-at\">%d</span></p>"+
-		"<p>Not Before: <span id=\"oidc-not-before\">%d</span></p>"+
+		"<p>Expires: <span id=\"oidc-expires\">%f</span></p>"+
+		"<p>Issue Time: <span id=\"oidc-issue-time\">%f</span></p>"+
+		"<p>Requested At: <span id=\"requested-at\">%f</span></p>"+
+		"<p>Authorize Time: <span id=\"oidc-auth-at\">%f</span></p>"+
+		"<p>Not Before: <span id=\"oidc-not-before\">%f</span></p>"+
 		"<p>Issuer: <span id=\"oidc-issuer\">%s</span></p>"+
 		"<p>JWT ID: <span id=\"oidc-jwt-id\">%s</span></p>"+
 		"<p>Subject: <span id=\"oidc-subj\">%s</span></p>"+
