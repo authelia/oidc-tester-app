@@ -6,11 +6,11 @@ type Claims struct {
 	AuthenticationContextClassReference string   `json:"acr"`
 	AuthenticationMethodsReference      string   `json:"amr"`
 	Audience                            []string `json:"aud"`
-	Expires                             float64  `json:"exp"`
-	IssueTime                           float64  `json:"iat"`
-	RequestedAt                         float64  `json:"rat"`
-	AuthorizeTime                       float64  `json:"auth_time"`
-	NotBefore                           float64  `json:"nbf"`
+	Expires                             int64    `json:"exp"`
+	IssueTime                           int64    `json:"iat"`
+	RequestedAt                         int64    `json:"rat"`
+	AuthorizeTime                       int64    `json:"auth_time"`
+	NotBefore                           int64    `json:"nbf"`
 	Issuer                              string   `json:"iss"`
 	Scope                               []string `json:"scp"`
 	ScopeString                         string   `json:"scope"`
