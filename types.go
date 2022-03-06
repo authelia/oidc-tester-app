@@ -4,7 +4,7 @@ type Claims struct {
 	AccessTokenHash                     string   `json:"at_hash"`
 	CodeHash                            string   `json:"c_hash"`
 	AuthenticationContextClassReference string   `json:"acr"`
-	AuthenticationMethodsReference      string   `json:"amr"`
+	AuthenticationMethodsReference      []string `json:"amr"`
 	Audience                            []string `json:"aud"`
 	Expires                             int64    `json:"exp"`
 	IssueTime                           int64    `json:"iat"`
