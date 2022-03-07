@@ -5,8 +5,8 @@ import (
 	"crypto/tls"
 	"encoding/gob"
 	"fmt"
-	"log"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
@@ -31,12 +31,11 @@ func main() {
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	rootCmd := &cobra.Command{Use: "oidc-tester-app", Run: root}
+	rootCmd := &cobra.Command{Use: "oidc-tester-app", RunE: root}
 
-	rootCmd.Flags().StringVar(&options.Host, "host", "0.0.0.0", "Specifies the host to listen on")
+	rootCmd.Flags().StringVar(&options.Host, "host", "0.0.0.0", "Specifies the tcp host to listen on")
 	rootCmd.Flags().IntVar(&options.Port, "port", 8080, "Specifies the port to listen on")
-	rootCmd.Flags().StringVar(&options.RedirectScheme, "redirect-scheme", "https", "Specifies the scheme used to generate the RedirectURL")
-	rootCmd.Flags().StringVarP(&options.RedirectDomain, "redirect-domain", "d", "localhost", "Specifies the domain used to generate the RedirectURL")
+	rootCmd.Flags().StringVar(&options.PublicURL, "public-url", "http://localhost/", "Specifies the root URL to generate the redirect URI")
 	rootCmd.Flags().StringVar(&options.ClientID, "id", "", "Specifies the OpenID Connect Client ID")
 	rootCmd.Flags().StringVarP(&options.ClientSecret, "secret", "s", "", "Specifies the OpenID Connect Client Secret")
 	rootCmd.Flags().StringVarP(&options.Issuer, "issuer", "i", "", "Specifies the URL for the OpenID Connect OP")
@@ -55,12 +54,19 @@ func main() {
 	}
 }
 
-func root(cmd *cobra.Command, args []string) {
-	options.RedirectURL = fmt.Sprintf("%s://%s:%d/oauth2/callback", options.RedirectScheme, options.RedirectDomain, options.Port)
+func root(cmd *cobra.Command, args []string) (err error) {
+	var parsedURL *url.URL
+
+	if parsedURL, err = url.Parse(options.PublicURL); err != nil {
+		return err
+	}
+
+	options.ParsedPublicURL = *parsedURL
+
+	options.RedirectURL = fmt.Sprintf("%s/oauth2/callback", options.ParsedPublicURL.String())
 
 	fmt.Printf("Provider URL: %s.\nRedirect URL: %s.\n", options.Issuer, options.RedirectURL)
 
-	var err error
 	oidcProvider, err = oidc.NewProvider(context.Background(), options.Issuer)
 	if err != nil {
 		panic(err)
@@ -84,7 +90,7 @@ func root(cmd *cobra.Command, args []string) {
 	r.HandleFunc("/protected", protectedBasicHandler)
 	r.HandleFunc("/protected/{type:group|user}/{group}", protectedAdvancedHandler)
 
-	fmt.Printf("Server Address http://%s:%d/ (%s)\n\nListening...", options.RedirectDomain, options.Port, options.Host)
+	fmt.Printf("Listening on %s:%d at address %s/...\n\n", options.Host, options.Port, options.ParsedPublicURL.String())
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%d", options.Host, options.Port), r))
+	return http.ListenAndServe(fmt.Sprintf("%s:%d", options.Host, options.Port), r)
 }
