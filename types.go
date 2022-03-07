@@ -1,9 +1,5 @@
 package main
 
-import (
-	"net/url"
-)
-
 type Claims struct {
 	AccessTokenHash                     string   `json:"at_hash"`
 	CodeHash                            string   `json:"c_hash"`
@@ -28,16 +24,14 @@ type Claims struct {
 }
 
 type Options struct {
-	Host            string
-	Port            int
-	ClientID        string
-	ClientSecret    string
-	Issuer          string
-	PublicURL       string
-	ParsedPublicURL url.URL
-	RedirectURL     string
-	Scopes          string
-	CookieName      string
-	Filters         []string
-	GroupsFilter    []string
+	Host         string
+	Port         int
+	ClientID     string
+	ClientSecret string
+	Issuer       string
+	PublicURL    string
+	Scopes       string
+	CookieName   string
+	Filters      []string
+	GroupsFilter []string
 }

@@ -55,17 +55,15 @@ func main() {
 }
 
 func root(cmd *cobra.Command, args []string) (err error) {
-	var parsedURL *url.URL
+	var (
+		publicURL, redirectURL *url.URL
+	)
 
-	if parsedURL, err = url.Parse(options.PublicURL); err != nil {
-		return err
+	if publicURL, redirectURL, err = getURLs(options.PublicURL); err != nil {
+		return fmt.Errorf("could not parse public url: %w", err)
 	}
 
-	options.ParsedPublicURL = *parsedURL
-
-	options.RedirectURL = fmt.Sprintf("%s/oauth2/callback", options.ParsedPublicURL.String())
-
-	fmt.Printf("Provider URL: %s.\nRedirect URL: %s.\n", options.Issuer, options.RedirectURL)
+	fmt.Printf("Provider URL: %s.\nRedirect URL: %s.\n", options.Issuer, redirectURL.String())
 
 	oidcProvider, err = oidc.NewProvider(context.Background(), options.Issuer)
 	if err != nil {
@@ -76,7 +74,7 @@ func root(cmd *cobra.Command, args []string) (err error) {
 	oauth2Config = oauth2.Config{
 		ClientID:     options.ClientID,
 		ClientSecret: options.ClientSecret,
-		RedirectURL:  options.RedirectURL,
+		RedirectURL:  redirectURL.String(),
 		Endpoint:     oidcProvider.Endpoint(),
 		Scopes:       strings.Split(options.Scopes, ","),
 	}
@@ -90,7 +88,7 @@ func root(cmd *cobra.Command, args []string) (err error) {
 	r.HandleFunc("/protected", protectedBasicHandler)
 	r.HandleFunc("/protected/{type:group|user}/{group}", protectedAdvancedHandler)
 
-	fmt.Printf("Listening on %s:%d at address %s/...\n\n", options.Host, options.Port, options.ParsedPublicURL.String())
+	fmt.Printf("Listening on %s:%d at address %s/...\n\n", options.Host, options.Port, publicURL.String())
 
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", options.Host, options.Port), r)
 }
