@@ -3,9 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"net/http"
 	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 func jsonHandler(res http.ResponseWriter, req *http.Request) {
@@ -58,26 +59,27 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 	res.Header().Add("Content-Type", "text/html")
 	fmt.Fprintf(res, "<p>Logged in as %s!</p>"+
 		"<p><a href=\"/logout\">Log out</a></p>"+
-		"<p>Access Token Hash: <span id=\"oidc-access-token-hash\">%s</span></p>"+
-		"<p>Code Hash: <span id=\"oidc-code-hash\">%s</span></p>"+
-		"<p>Authentication Context Class Reference: <span id=\"oidc-auth-ctx-class-ref\">%s</span></p>"+
-		"<p>Authentication Methods Reference: <span id=\"oidc-auth-method-ref\">%s</span></p>"+
-		"<p>Audience: <span id=\"oidc-audience\">%s</span></p>"+
-		"<p>Expires: <span id=\"oidc-expires\">%d</span></p>"+
-		"<p>Issue Time: <span id=\"oidc-issue-time\">%d</span></p>"+
-		"<p>Requested At: <span id=\"requested-at\">%d</span></p>"+
-		"<p>Authorize Time: <span id=\"oidc-auth-at\">%d</span></p>"+
-		"<p>Not Before: <span id=\"oidc-not-before\">%d</span></p>"+
-		"<p>Issuer: <span id=\"oidc-issuer\">%s</span></p>"+
-		"<p>JWT ID: <span id=\"oidc-jwt-id\">%s</span></p>"+
-		"<p>Subject: <span id=\"oidc-subj\">%s</span></p>"+
-		"<p>Nonce: <span id=\"oidc-nonce\">%s</span></p>"+
-		"<p>Email: <span id=\"oidc-email\">%s</span></p>"+
-		"<p>Email Verified: <span id=\"oidc-email-verified\">%v</span></p>"+
-		"<p>Groups: <span id=\"oidc-groups\">%s</span></p>"+
-		"<p>Name: <span id=\"oidc-name\">%s</span></p>"+
-		"<p>Raw: <span id=\"oidc-raw\">%s</span></p>",
-		filterText(claims.Subject, options.Filters),
+		"<p>Access Token Hash: <span id=\"claim-at_hash\">%s</span></p>"+
+		"<p>Code Hash: <span id=\"claim-c_hash\">%s</span></p>"+
+		"<p>Authentication Context Class Reference: <span id=\"claim-acr\">%s</span></p>"+
+		"<p>Authentication Methods Reference: <span id=\"claim-amr\">%s</span></p>"+
+		"<p>Audience: <span id=\"claim-aud\">%s</span></p>"+
+		"<p>Expires: <span id=\"claim-exp\">%d</span></p>"+
+		"<p>Issue Time: <span id=\"claim-iat\">%d</span></p>"+
+		"<p>Requested At: <span id=\"claim-rat\">%d</span></p>"+
+		"<p>Authorize Time: <span id=\"claim-auth_at\">%d</span></p>"+
+		"<p>Not Before: <span id=\"claim-nbf\">%d</span></p>"+
+		"<p>Issuer: <span id=\"claim-iss\">%s</span></p>"+
+		"<p>JWT ID: <span id=\"claim-jti\">%s</span></p>"+
+		"<p>Subject: <span id=\"claim-sub\">%s</span></p>"+
+		"<p>Preferred Username: <span id=\"claim-preferred_username\">%s</span></p>"+
+		"<p>Nonce: <span id=\"claim-nonce\">%s</span></p>"+
+		"<p>Email: <span id=\"claim-email\">%s</span></p>"+
+		"<p>Email Verified: <span id=\"claim-email_verified\">%v</span></p>"+
+		"<p>Groups: <span id=\"claim-groups\">%s</span></p>"+
+		"<p>Name: <span id=\"claim-name\">%s</span></p>"+
+		"<p>Raw: <span id=\"claims-raw\">%s</span></p>",
+		filterText(stringOrderedPreference(claims.PreferredUsername, claims.Subject), options.Filters),
 		claims.AccessTokenHash,
 		claims.CodeHash,
 		claims.AuthenticationContextClassReference,
@@ -91,6 +93,7 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 		filterText(claims.Issuer, options.Filters),
 		claims.JWTIdentifier,
 		filterText(claims.Subject, options.Filters),
+		filterText(claims.PreferredUsername, options.Filters),
 		claims.Nonce,
 		filterText(claims.Email, options.Filters),
 		claims.EmailVerified,
