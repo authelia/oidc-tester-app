@@ -19,6 +19,7 @@ type Claims struct {
 	Nonce                               string   `json:"nonce"`
 	Email                               string   `json:"email"`
 	EmailVerified                       bool     `json:"email_verified"`
+	PreferredUsername                   string   `json:"preferred_username"`
 	Groups                              []string `json:"groups"`
 	Name                                string   `json:"name"`
 }

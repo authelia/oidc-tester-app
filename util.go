@@ -29,6 +29,16 @@ func filterText(input string, filters []string) (output string) {
 	return input
 }
 
+func stringOrderedPreference(strs ...string) string {
+	for _, str := range strs {
+		if str != "" {
+			return str
+		}
+	}
+
+	return ""
+}
+
 func filterSliceOfText(input []string, filters []string) (output []string) {
 	for _, item := range input {
 		output = append(output, filterText(item, filters))
