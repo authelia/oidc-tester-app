@@ -81,12 +81,14 @@ func root(cmd *cobra.Command, args []string) (err error) {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", indexHandler)
+	r.HandleFunc("/error", errorHandler)
 	r.HandleFunc("/login", loginHandler)
 	r.HandleFunc("/logout", logoutHandler)
 	r.HandleFunc("/oauth2/callback", oauthCallbackHandler)
 	r.HandleFunc("/json", jsonHandler)
-	r.HandleFunc("/protected", protectedBasicHandler)
-	r.HandleFunc("/protected/{type:group|user}/{group}", protectedAdvancedHandler)
+	r.HandleFunc("/jwt.json", jsonHandler)
+	r.HandleFunc("/protected", protectedHandler(true))
+	r.HandleFunc("/protected/{type:group|user}/{name}", protectedHandler(false))
 
 	fmt.Printf("Listening on %s:%d at address %s...\n\n", options.Host, options.Port, publicURL.String())
 

@@ -1,10 +1,10 @@
 package main
 
 import (
+	"crypto/sha512"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -37,159 +37,103 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if logged, ok := session.Values["logged"].(bool); !ok || !logged {
-		fmt.Fprintf(res, "<p>Not logged yet...</p> <a id=\"login-link\" href=\"/login\">Log in</a>")
-
-		return
+	tpl := indexTplData{
+		Error: req.FormValue("error"),
 	}
 
-	claims := session.Values["claims"].(Claims)
+	if logged, ok := session.Values["logged"].(bool); ok && logged {
+		tpl.LoggedIn = true
+		tpl.Claims = session.Values["claims"].(Claims)
 
-	var groups []string
-	if len(options.GroupsFilter) >= 1 {
-		for _, group := range claims.Groups {
-			if isStringInSlice(group, options.GroupsFilter) {
-				groups = append(groups, filterText(group, options.Filters))
+		if len(options.GroupsFilter) >= 1 {
+			for _, group := range tpl.Claims.Groups {
+				if isStringInSlice(group, options.GroupsFilter) {
+					tpl.Groups = append(tpl.Groups, filterText(group, options.Filters))
+				}
 			}
+		} else {
+			tpl.Groups = filterSliceOfText(tpl.Claims.Groups, options.Filters)
 		}
-	} else {
-		groups = filterSliceOfText(claims.Groups, options.Filters)
+
+		tpl.Claims.PreferredUsername = filterText(tpl.Claims.PreferredUsername, options.Filters)
+		tpl.Claims.Audience = filterSliceOfText(tpl.Claims.Audience, options.Filters)
+		tpl.Claims.Issuer = filterText(tpl.Claims.Issuer, options.Filters)
+		tpl.Claims.Email = filterText(tpl.Claims.Email, options.Filters)
+		tpl.Claims.Name = filterText(tpl.Claims.Name, options.Filters)
+		tpl.RawToken = rawTokens[tpl.Claims.JWTIdentifier]
 	}
 
 	res.Header().Add("Content-Type", "text/html")
-	fmt.Fprintf(res, `<p id="welcome">Logged in as %s!</p>
-		<p><a href="/logout" id="log-out">Log out</a></p>
-		<p>Access Token Hash: <span id="claim-at_hash">%s</span></p>
-		<p>Code Hash: <span id="claim-c_hash">%s</span></p>
-		<p>Authentication Context Class Reference: <span id="claim-acr">%s</span></p>
-		<p>Authentication Methods Reference: <span id="claim-amr">%s</span></p>
-		<p>Audience: <span id="claim-aud">%s</span></p>
-		<p>Expires: <span id="claim-exp">%d</span></p>
-		<p>Issue Time: <span id="claim-iat">%d</span></p>
-		<p>Requested At: <span id="claim-rat">%d</span></p>
-		<p>Authorize Time: <span id="claim-auth_at">%d</span></p>
-		<p>Not Before: <span id="claim-nbf">%d</span></p>
-		<p>Issuer: <span id="claim-iss">%s</span></p>
-		<p>JWT ID: <span id="claim-jti">%s</span></p>
-		<p>Subject: <span id="claim-sub">%s</span></p>
-		<p>Preferred Username: <span id="claim-preferred_username">%s</span></p>
-		<p>Nonce: <span id="claim-nonce">%s</span></p>
-		<p>Email: <span id="claim-email">%s</span></p>
-		<p>Email Verified: <span id="claim-email_verified">%v</span></p>
-		<p>Groups: <span id="claim-groups">%s</span></p>
-		<p>Name: <span id="claim-name">%s</span></p>
-		<p>Raw: <span id="raw">%s</span></p>`,
-		filterText(stringOrderedPreference(claims.PreferredUsername, claims.Subject), options.Filters),
-		claims.AccessTokenHash,
-		claims.CodeHash,
-		claims.AuthenticationContextClassReference,
-		strings.Join(claims.AuthenticationMethodsReference, ", "),
-		filterSliceOfText(claims.Audience, options.Filters),
-		claims.Expires,
-		claims.IssueTime,
-		claims.RequestedAt,
-		claims.AuthorizeTime,
-		claims.NotBefore,
-		filterText(claims.Issuer, options.Filters),
-		claims.JWTIdentifier,
-		filterText(claims.Subject, options.Filters),
-		filterText(claims.PreferredUsername, options.Filters),
-		claims.Nonce,
-		filterText(claims.Email, options.Filters),
-		claims.EmailVerified,
-		strings.Join(groups, ", "),
-		filterText(claims.Name, options.Filters),
-		rawTokens[claims.JWTIdentifier],
-	)
+
+	if err = indexTpl.Execute(res, tpl); err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+	}
 }
 
-func protectedBasicHandler(res http.ResponseWriter, req *http.Request) {
-	session, err := store.Get(req, options.CookieName)
-
-	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-
-		return
+func errorHandler(res http.ResponseWriter, req *http.Request) {
+	tpl := errorTplData{
+		Error:            req.FormValue("error"),
+		ErrorDescription: req.FormValue("error_description"),
+		ErrorURI:         req.FormValue("error_uri"),
+		State:            req.FormValue("state"),
 	}
 
-	if logged, ok := session.Values["logged"].(bool); !ok || !logged {
-		session.Values["redirect-url"] = req.URL.Path
-		if err = session.Save(req, res); err != nil {
-			fmt.Println(err.Error())
+	res.Header().Add("Content-Type", "text/html")
+
+	if err := errorTpl.Execute(res, tpl); err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func protectedHandler(basic bool) http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		session, err := store.Get(req, options.CookieName)
+
+		if err != nil {
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 
 			return
 		}
 
-		http.Redirect(res, req, oauth2Config.AuthCodeURL("random-string-here"), http.StatusFound)
+		if logged, ok := session.Values["logged"].(bool); !ok || !logged {
+			session.Values["redirect-url"] = req.URL.Path
 
-		return
-	}
+			if err = session.Save(req, res); err != nil {
+				fmt.Println(err.Error())
+				http.Error(res, err.Error(), http.StatusInternalServerError)
+				return
+			}
 
-	res.Header().Add("Content-Type", "text/html")
-	fmt.Fprintf(res, "<p id=\"message\">This is the protected endpoint</p>"+
-		"<p id=\"protected-secret\">2511140547</p>")
-}
+			http.Redirect(res, req, oauth2Config.AuthCodeURL("random-string-here"), http.StatusFound)
 
-func protectedAdvancedHandler(res http.ResponseWriter, req *http.Request) {
-	session, err := store.Get(req, options.CookieName)
+			return
+		}
 
-	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
+		tpl := protectedTplData{}
 
-		return
-	}
+		vars := mux.Vars(req)
 
-	if logged, ok := session.Values["logged"].(bool); !ok || !logged {
-		session.Values["redirect-url"] = req.URL.Path
+		tpl.Vars.Type = vars["type"]
+		tpl.Vars.Value = vars["name"]
 
-		if err = session.Save(req, res); err != nil {
-			fmt.Println(err.Error())
+		if basic {
+			tpl.Vars.ProtectedSecret = "2511140547"
+			tpl.Vars.Type = "basic"
+		} else {
+			tpl.Claims = session.Values["claims"].(Claims)
+			hash := sha512.New()
+
+			hash.Write([]byte(tpl.Vars.Value))
+
+			tpl.Vars.ProtectedSecret = fmt.Sprintf("%x", hash.Sum(nil))
+		}
+
+		res.Header().Add("Content-Type", "text/html")
+
+		if err = protectedTpl.Execute(res, tpl); err != nil {
 			http.Error(res, err.Error(), http.StatusInternalServerError)
-			return
 		}
-
-		http.Redirect(res, req, oauth2Config.AuthCodeURL("random-string-here"), http.StatusFound)
-
-		return
 	}
-
-	vars := mux.Vars(req)
-	claims := session.Values["claims"].(Claims)
-
-	res.Header().Add("Content-Type", "text/html")
-
-	if vars["type"] == "user" {
-		if strings.EqualFold(vars["user"], claims.Subject) {
-			fmt.Fprintf(res, "<p id=\"message\">This is the protected user endpoint</p>"+
-				"<p id=\"message-grant\">Access Granted. Your username is '<span id=\"user\">%s</span>'.</p>"+
-				"<p id=\"access-granted\">1</p>", vars["user"])
-
-			return
-		}
-		fmt.Fprintf(res, "<p id=\"message\">This is the protected user endpoint</p>"+
-			"<p id=\"grant-message\">Access Denied. Requires user '<span id=\"user\">%s</span>'.</p>"+
-			"<p id=\"access-granted\">0</p>", vars["user"])
-
-		return
-	}
-
-	if vars["type"] != "group" {
-		fmt.Fprintf(res, "<p id=\"message\">This is the protected invalid endpoint</p>")
-
-		return
-	}
-
-	if isStringInSlice(vars["group"], claims.Groups) {
-		fmt.Fprintf(res, "<p id=\"message\">This is the protected group endpoint</p>"+
-			"<p id=\"grant-message\">Access Granted. You have the group '<span id=\"group\">%s</span>'.</p>"+
-			"<p id=\"access-granted\">1</p>", vars["group"])
-
-		return
-	}
-	fmt.Fprintf(res, "<p id=\"message\">This is the protected group endpoint</p>"+
-		"<p id=\"grant-message\">Access Denied. Requires group '<span id=\"group\">%s</span>'.</p>"+
-		"<p id=\"access-granted\">0</p>", vars["group"])
 }
 
 func loginHandler(res http.ResponseWriter, req *http.Request) {
@@ -234,6 +178,12 @@ func logoutHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
+	if req.FormValue("error") != "" {
+		http.Redirect(res, req, fmt.Sprintf("/error?%s", req.Form.Encode()), http.StatusFound)
+
+		return
+	}
+
 	// The state should be checked here in production
 	oauth2Token, err := oauth2Config.Exchange(req.Context(), req.URL.Query().Get("code"))
 
