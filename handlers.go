@@ -57,28 +57,28 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	res.Header().Add("Content-Type", "text/html")
-	fmt.Fprintf(res, "<p>Logged in as %s!</p>"+
-		"<p><a href=\"/logout\">Log out</a></p>"+
-		"<p>Access Token Hash: <span id=\"claim-at_hash\">%s</span></p>"+
-		"<p>Code Hash: <span id=\"claim-c_hash\">%s</span></p>"+
-		"<p>Authentication Context Class Reference: <span id=\"claim-acr\">%s</span></p>"+
-		"<p>Authentication Methods Reference: <span id=\"claim-amr\">%s</span></p>"+
-		"<p>Audience: <span id=\"claim-aud\">%s</span></p>"+
-		"<p>Expires: <span id=\"claim-exp\">%d</span></p>"+
-		"<p>Issue Time: <span id=\"claim-iat\">%d</span></p>"+
-		"<p>Requested At: <span id=\"claim-rat\">%d</span></p>"+
-		"<p>Authorize Time: <span id=\"claim-auth_at\">%d</span></p>"+
-		"<p>Not Before: <span id=\"claim-nbf\">%d</span></p>"+
-		"<p>Issuer: <span id=\"claim-iss\">%s</span></p>"+
-		"<p>JWT ID: <span id=\"claim-jti\">%s</span></p>"+
-		"<p>Subject: <span id=\"claim-sub\">%s</span></p>"+
-		"<p>Preferred Username: <span id=\"claim-preferred_username\">%s</span></p>"+
-		"<p>Nonce: <span id=\"claim-nonce\">%s</span></p>"+
-		"<p>Email: <span id=\"claim-email\">%s</span></p>"+
-		"<p>Email Verified: <span id=\"claim-email_verified\">%v</span></p>"+
-		"<p>Groups: <span id=\"claim-groups\">%s</span></p>"+
-		"<p>Name: <span id=\"claim-name\">%s</span></p>"+
-		"<p>Raw: <span id=\"claims-raw\">%s</span></p>",
+	fmt.Fprintf(res, `<p id="welcome">Logged in as %s!</p>
+		<p><a href="/logout" id="log-out">Log out</a></p>
+		<p>Access Token Hash: <span id="claim-at_hash">%s</span></p>
+		<p>Code Hash: <span id="claim-c_hash">%s</span></p>
+		<p>Authentication Context Class Reference: <span id="claim-acr">%s</span></p>
+		<p>Authentication Methods Reference: <span id="claim-amr">%s</span></p>
+		<p>Audience: <span id="claim-aud">%s</span></p>
+		<p>Expires: <span id="claim-exp">%d</span></p>
+		<p>Issue Time: <span id="claim-iat">%d</span></p>
+		<p>Requested At: <span id="claim-rat">%d</span></p>
+		<p>Authorize Time: <span id="claim-auth_at">%d</span></p>
+		<p>Not Before: <span id="claim-nbf">%d</span></p>
+		<p>Issuer: <span id="claim-iss">%s</span></p>
+		<p>JWT ID: <span id="claim-jti">%s</span></p>
+		<p>Subject: <span id="claim-sub">%s</span></p>
+		<p>Preferred Username: <span id="claim-preferred_username">%s</span></p>
+		<p>Nonce: <span id="claim-nonce">%s</span></p>
+		<p>Email: <span id="claim-email">%s</span></p>
+		<p>Email Verified: <span id="claim-email_verified">%v</span></p>
+		<p>Groups: <span id="claim-groups">%s</span></p>
+		<p>Name: <span id="claim-name">%s</span></p>
+		<p>Raw: <span id="raw">%s</span></p>`,
 		filterText(stringOrderedPreference(claims.PreferredUsername, claims.Subject), options.Filters),
 		claims.AccessTokenHash,
 		claims.CodeHash,
