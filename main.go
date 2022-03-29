@@ -35,7 +35,7 @@ func main() {
 
 	rootCmd.Flags().StringVar(&options.Host, "host", "0.0.0.0", "Specifies the tcp host to listen on")
 	rootCmd.Flags().IntVar(&options.Port, "port", 8080, "Specifies the port to listen on")
-	rootCmd.Flags().StringVar(&options.PublicURL, "public-url", "http://localhost/", "Specifies the root URL to generate the redirect URI")
+	rootCmd.Flags().StringVar(&options.PublicURL, "public-url", "http://localhost:8080/", "Specifies the root URL to generate the redirect URI")
 	rootCmd.Flags().StringVar(&options.ClientID, "id", "", "Specifies the OpenID Connect Client ID")
 	rootCmd.Flags().StringVarP(&options.ClientSecret, "secret", "s", "", "Specifies the OpenID Connect Client Secret")
 	rootCmd.Flags().StringVarP(&options.Issuer, "issuer", "i", "", "Specifies the URL for the OpenID Connect OP")
@@ -88,7 +88,7 @@ func root(cmd *cobra.Command, args []string) (err error) {
 	r.HandleFunc("/protected", protectedBasicHandler)
 	r.HandleFunc("/protected/{type:group|user}/{group}", protectedAdvancedHandler)
 
-	fmt.Printf("Listening on %s:%d at address %s/...\n\n", options.Host, options.Port, publicURL.String())
+	fmt.Printf("Listening on %s:%d at address %s...\n\n", options.Host, options.Port, publicURL.String())
 
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", options.Host, options.Port), r)
 }
