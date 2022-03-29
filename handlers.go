@@ -83,7 +83,7 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 		claims.AccessTokenHash,
 		claims.CodeHash,
 		claims.AuthenticationContextClassReference,
-		claims.AuthenticationMethodsReference,
+		strings.Join(claims.AuthenticationMethodsReference, ", "),
 		filterSliceOfText(claims.Audience, options.Filters),
 		claims.Expires,
 		claims.IssueTime,
