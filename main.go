@@ -18,7 +18,7 @@ import (
 
 var options Options
 
-var oidcProvider *oidc.Provider
+var provider *oidc.Provider
 var verifier *oidc.IDTokenVerifier
 var store = sessions.NewCookieStore([]byte("secret-key"))
 
@@ -65,17 +65,16 @@ func root(cmd *cobra.Command, args []string) (err error) {
 
 	fmt.Printf("Provider URL: %s.\nRedirect URL: %s.\n", options.Issuer, redirectURL.String())
 
-	oidcProvider, err = oidc.NewProvider(context.Background(), options.Issuer)
-	if err != nil {
-		panic(err)
+	if provider, err = oidc.NewProvider(context.Background(), options.Issuer); err != nil {
+		return err
 	}
 
-	verifier = oidcProvider.Verifier(&oidc.Config{ClientID: options.ClientID})
+	verifier = provider.Verifier(&oidc.Config{ClientID: options.ClientID})
 	oauth2Config = oauth2.Config{
 		ClientID:     options.ClientID,
 		ClientSecret: options.ClientSecret,
 		RedirectURL:  redirectURL.String(),
-		Endpoint:     oidcProvider.Endpoint(),
+		Endpoint:     provider.Endpoint(),
 		Scopes:       strings.Split(options.Scopes, ","),
 	}
 
@@ -90,7 +89,25 @@ func root(cmd *cobra.Command, args []string) (err error) {
 	r.HandleFunc("/protected", protectedHandler(true))
 	r.HandleFunc("/protected/{type:group|user}/{name}", protectedHandler(false))
 
+	r.NotFoundHandler = &ErrorHandler{http.StatusNotFound}
+	r.MethodNotAllowedHandler = &ErrorHandler{http.StatusMethodNotAllowed}
+
 	fmt.Printf("Listening on %s:%d at address %s...\n\n", options.Host, options.Port, publicURL.String())
 
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", options.Host, options.Port), r)
+}
+
+type ErrorHandler struct {
+	code int
+}
+
+func (h *ErrorHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	switch h.code {
+	case http.StatusNotFound:
+		fmt.Printf("404 Not Found: %s %s\n", r.Method, r.URL)
+	case http.StatusMethodNotAllowed:
+		fmt.Printf("405 Method Not Allowed: %s %s\n", r.Method, r.URL)
+	}
+
+	rw.WriteHeader(h.code)
 }
