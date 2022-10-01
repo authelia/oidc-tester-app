@@ -66,7 +66,7 @@ func root(cmd *cobra.Command, args []string) (err error) {
 	fmt.Printf("Provider URL: %s.\nRedirect URL: %s.\n", options.Issuer, redirectURL.String())
 
 	if provider, err = oidc.NewProvider(context.Background(), options.Issuer); err != nil {
-		return err
+		return fmt.Errorf("error initializing oidc provider: %w", err)
 	}
 
 	verifier = provider.Verifier(&oidc.Config{ClientID: options.ClientID})
@@ -94,7 +94,11 @@ func root(cmd *cobra.Command, args []string) (err error) {
 
 	fmt.Printf("Listening on %s:%d at address %s...\n\n", options.Host, options.Port, publicURL.String())
 
-	return http.ListenAndServe(fmt.Sprintf("%s:%d", options.Host, options.Port), r)
+	if err = http.ListenAndServe(fmt.Sprintf("%s:%d", options.Host, options.Port), r); err != nil {
+		return fmt.Errorf("error listening: %w", err)
+	}
+
+	return nil
 }
 
 type ErrorHandler struct {
