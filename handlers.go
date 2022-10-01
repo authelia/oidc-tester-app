@@ -6,7 +6,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
+	"github.com/rs/zerolog/log"
+	"golang.org/x/oauth2"
 )
 
 func jsonHandler(res http.ResponseWriter, req *http.Request) {
@@ -184,68 +188,78 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	var (
+		token      *oauth2.Token
+		idToken    *oidc.IDToken
+		err        error
+		idTokenRaw string
+		ok         bool
+	)
+
 	// The state should be checked here in production
-	oauth2Token, err := oauth2Config.Exchange(req.Context(), req.URL.Query().Get("code"))
-
-	if err != nil {
-		fmt.Errorf("unable to exchange authorization code for tokens: %w", err)
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-
+	if token, err = oauth2Config.Exchange(req.Context(), req.URL.Query().Get("code")); err != nil {
+		writeErr(res, err, "unable to exchange authorization code for tokens", http.StatusInternalServerError)
 		return
 	}
 
 	// Extract the ID Token from OAuth2 token.
-	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
-	if !ok {
-		fmt.Errorf("missing id token")
-		http.Error(res, "Missing id_token", http.StatusInternalServerError)
-
+	if idTokenRaw, ok = token.Extra("id_token").(string); !ok {
+		writeErr(res, nil, "missing id token", http.StatusInternalServerError)
 		return
 	}
 
 	// Parse and verify ID Token payload.
-	idToken, err := verifier.Verify(req.Context(), rawIDToken)
-	if err != nil {
-		fmt.Errorf("unable to verify id token or token is invalid: %w", err)
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-
+	if idToken, err = verifier.Verify(req.Context(), idTokenRaw); err != nil {
+		writeErr(res, err, "unable to verify id token or token is invalid", http.StatusInternalServerError)
 		return
 	}
 
 	// Extract custom claims
 	claims := Claims{}
 
-	if err := idToken.Claims(&claims); err != nil {
-		fmt.Errorf("unable to retrieve id token claims: %w", err)
-		http.Error(res, err.Error(), http.StatusInternalServerError)
+	var session *sessions.Session
 
+	if err = idToken.Claims(&claims); err != nil {
+		writeErr(res, err, "unable to retrieve id token claims", http.StatusInternalServerError)
 		return
 	}
 
-	session, err := store.Get(req, options.CookieName)
-	if err != nil {
-		fmt.Errorf("unable to get session from cookie: %w", err)
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-
+	if session, err = store.Get(req, options.CookieName); err != nil {
+		writeErr(res, err, "unable to get session from cookie", http.StatusInternalServerError)
 		return
 	}
 
 	session.Values["claims"] = claims
 	session.Values["logged"] = true
-	rawTokens[claims.JWTIdentifier] = rawIDToken
+	rawTokens[claims.JWTIdentifier] = idTokenRaw
 
 	if err = session.Save(req, res); err != nil {
-		fmt.Errorf("unable to save session: %w", err)
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-
+		writeErr(res, err, "unable to save session", http.StatusInternalServerError)
 		return
 	}
 
-	if redirectUrl, ok := session.Values["redirect-url"].(string); ok {
-		http.Redirect(res, req, redirectUrl, http.StatusFound)
+	var redirectUrl string
 
+	if redirectUrl, ok = session.Values["redirect-url"].(string); ok {
+		http.Redirect(res, req, redirectUrl, http.StatusFound)
 		return
 	}
 
 	http.Redirect(res, req, "/", http.StatusFound)
+}
+
+func writeErr(res http.ResponseWriter, err error, msg string, statusCode int) {
+	switch {
+	case err == nil:
+		log.Logger.Error().
+			Msg(msg)
+
+		http.Error(res, msg, statusCode)
+	default:
+		log.Logger.Error().
+			Err(err).
+			Msg(msg)
+
+		http.Error(res, fmt.Errorf("%s: %w", msg, err).Error(), statusCode)
+	}
 }

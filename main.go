@@ -7,11 +7,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
@@ -27,6 +30,8 @@ var oauth2Config oauth2.Config
 var rawTokens = make(map[string]string)
 
 func main() {
+	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).With().Timestamp().Logger().Level(zerolog.DebugLevel)
+
 	gob.Register(Claims{})
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -48,9 +53,8 @@ func main() {
 	_ = rootCmd.MarkFlagRequired("secret")
 	_ = rootCmd.MarkFlagRequired("issuer")
 
-	err := rootCmd.Execute()
-	if err != nil {
-		panic(err)
+	if err := rootCmd.Execute(); err != nil {
+		log.Logger.Err(err).Msg("error in root process")
 	}
 }
 
@@ -92,7 +96,11 @@ func root(cmd *cobra.Command, args []string) (err error) {
 	r.NotFoundHandler = &ErrorHandler{http.StatusNotFound}
 	r.MethodNotAllowedHandler = &ErrorHandler{http.StatusMethodNotAllowed}
 
-	fmt.Printf("Listening on %s:%d at address %s...\n\n", options.Host, options.Port, publicURL.String())
+	log.Logger.Info().
+		Str("host", options.Host).
+		Int("port", options.Port).
+		Str("address", publicURL.String()).
+		Msg("listening for connections")
 
 	if err = http.ListenAndServe(fmt.Sprintf("%s:%d", options.Host, options.Port), r); err != nil {
 		return fmt.Errorf("error listening: %w", err)
