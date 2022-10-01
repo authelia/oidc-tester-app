@@ -54,7 +54,7 @@ func main() {
 	_ = rootCmd.MarkFlagRequired("issuer")
 
 	if err := rootCmd.Execute(); err != nil {
-		log.Logger.Err(err).Msg("error in root process")
+		log.Logger.Fatal().Err(err).Msg("error in root process")
 	}
 }
 
@@ -67,7 +67,10 @@ func root(cmd *cobra.Command, args []string) (err error) {
 		return fmt.Errorf("could not parse public url: %w", err)
 	}
 
-	fmt.Printf("Provider URL: %s.\nRedirect URL: %s.\n", options.Issuer, redirectURL.String())
+	log.Info().
+		Str("provider_url", options.Issuer).
+		Str("redirect_url", redirectURL.String()).
+		Msg("configuring oidc provider")
 
 	if provider, err = oidc.NewProvider(context.Background(), options.Issuer); err != nil {
 		return fmt.Errorf("error initializing oidc provider: %w", err)

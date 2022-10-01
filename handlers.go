@@ -18,16 +18,14 @@ func jsonHandler(res http.ResponseWriter, req *http.Request) {
 	session, err := store.Get(req, options.CookieName)
 
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-
+		writeErr(res, err, "error getting session", http.StatusInternalServerError)
 		return
 	}
 
 	claims := session.Values["claims"].(Claims)
 
-	if err := json.NewEncoder(res).Encode(claims); err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-
+	if err = json.NewEncoder(res).Encode(claims); err != nil {
+		writeErr(res, err, "error encoding claims", http.StatusInternalServerError)
 		return
 	}
 }
@@ -36,8 +34,7 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 	session, err := store.Get(req, options.CookieName)
 
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-
+		writeErr(res, err, "error getting session", http.StatusInternalServerError)
 		return
 	}
 
@@ -70,7 +67,7 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 	res.Header().Add("Content-Type", "text/html")
 
 	if err = indexTpl.Execute(res, tpl); err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
+		writeErr(res, err, "error executing index template", http.StatusInternalServerError)
 	}
 }
 
@@ -82,10 +79,17 @@ func errorHandler(res http.ResponseWriter, req *http.Request) {
 		State:            req.FormValue("state"),
 	}
 
+	log.Logger.Error().
+		Str("error_name", tpl.Error).
+		Str("description", tpl.ErrorDescription).
+		Str("uri", tpl.ErrorURI).
+		Str("state", tpl.State).
+		Msg("received oidc authorization server error")
+
 	res.Header().Add("Content-Type", "text/html")
 
 	if err := errorTpl.Execute(res, tpl); err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
+		writeErr(res, err, "error executing error template", http.StatusInternalServerError)
 	}
 }
 
@@ -94,8 +98,7 @@ func protectedHandler(basic bool) http.HandlerFunc {
 		session, err := store.Get(req, options.CookieName)
 
 		if err != nil {
-			http.Error(res, err.Error(), http.StatusInternalServerError)
-
+			writeErr(res, err, "error getting session", http.StatusInternalServerError)
 			return
 		}
 
@@ -103,8 +106,7 @@ func protectedHandler(basic bool) http.HandlerFunc {
 			session.Values["redirect-url"] = req.URL.Path
 
 			if err = session.Save(req, res); err != nil {
-				fmt.Println(err.Error())
-				http.Error(res, err.Error(), http.StatusInternalServerError)
+				writeErr(res, err, "error saving session", http.StatusInternalServerError)
 				return
 			}
 
@@ -135,7 +137,7 @@ func protectedHandler(basic bool) http.HandlerFunc {
 		res.Header().Add("Content-Type", "text/html")
 
 		if err = protectedTpl.Execute(res, tpl); err != nil {
-			http.Error(res, err.Error(), http.StatusInternalServerError)
+			writeErr(res, err, "error executing template", http.StatusInternalServerError)
 		}
 	}
 }
@@ -144,16 +146,13 @@ func loginHandler(res http.ResponseWriter, req *http.Request) {
 	session, err := store.Get(req, options.CookieName)
 
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-
+		writeErr(res, nil, "error getting cookie", http.StatusInternalServerError)
 		return
 	}
 
 	session.Values["redirect-url"] = "/"
 	if err = session.Save(req, res); err != nil {
-		fmt.Println(err.Error())
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-
+		writeErr(res, err, "error saving session", http.StatusInternalServerError)
 		return
 	}
 
@@ -162,19 +161,16 @@ func loginHandler(res http.ResponseWriter, req *http.Request) {
 
 func logoutHandler(res http.ResponseWriter, req *http.Request) {
 	session, err := store.Get(req, options.CookieName)
-
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-
+		writeErr(res, err, "error getting cookie", http.StatusInternalServerError)
 		return
 	}
 
 	// Reset the session
 	session.Values = make(map[interface{}]interface{})
 
-	if err := session.Save(req, res); err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-
+	if err = session.Save(req, res); err != nil {
+		writeErr(res, err, "error saving session", http.StatusInternalServerError)
 		return
 	}
 
