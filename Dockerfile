@@ -9,7 +9,7 @@ RUN go build -ldflags '-s -w' -o oidc-tester-app *.go
 
 FROM alpine
 
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk --no-cache add ca-certificates tzdata bash
 
 WORKDIR /app
 
