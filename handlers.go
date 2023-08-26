@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gorilla/mux"
@@ -134,6 +135,12 @@ func protectedHandler(basic bool) http.HandlerFunc {
 			tpl.Vars.ProtectedSecret = fmt.Sprintf("%x", hash.Sum(nil))
 		}
 
+		if val, ok := session.Values["ac_url"]; ok {
+			if acurl, ok := val.(*url.URL); ok {
+				tpl.AuthorizeCodeURL = acurl.String()
+			}
+		}
+
 		res.Header().Add("Content-Type", "text/html")
 
 		if err = protectedTpl.Execute(res, tpl); err != nil {
@@ -227,6 +234,7 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 
 	session.Values["claims"] = claims
 	session.Values["logged"] = true
+	session.Values["ac_url"] = req.URL
 	rawTokens[claims.JWTIdentifier] = idTokenRaw
 
 	if err = session.Save(req, res); err != nil {
