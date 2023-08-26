@@ -34,7 +34,8 @@ type protectedTplData struct {
 	Vars               struct {
 		Type, Value, ProtectedSecret string
 	}
-	Claims Claims
+	Claims           Claims
+	AuthorizeCodeURL string
 }
 
 type errorTplData struct {
