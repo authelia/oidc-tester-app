@@ -23,10 +23,11 @@ var (
 type indexTplData struct {
 	Title, Description, RawToken string
 
-	Error    string
-	LoggedIn bool
-	Claims   Claims
-	Groups   []string
+	Error            string
+	LoggedIn         bool
+	Claims           Claims
+	Groups           []string
+	AuthorizeCodeURL string
 }
 
 type protectedTplData struct {
@@ -34,8 +35,7 @@ type protectedTplData struct {
 	Vars               struct {
 		Type, Value, ProtectedSecret string
 	}
-	Claims           Claims
-	AuthorizeCodeURL string
+	Claims Claims
 }
 
 type errorTplData struct {

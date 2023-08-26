@@ -42,6 +42,7 @@
         <p>Groups: <span id="claim-groups">{{ stringsJoin .Groups ", " }}</span></p>
         <p>Name: <span id="claim-name">{{ .Claims.Name }}</span></p>
         <p>Raw: <span id="raw">{{ .RawToken }}</span></p>
+        <p>Authorize Code URL: <span id="auth-code-url">{{ .AuthorizeCodeURL }}</span></p>
         {{- else }}
         <p>Not logged yet...</p> <a id="login-link" href="/login">Log in</a>
         {{- end }}

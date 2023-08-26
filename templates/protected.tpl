@@ -45,7 +45,6 @@
         {{- else }}
         <p id="message">This is the protected invalid endpoint</p>
         {{- end }}
-        <p id="auth-code-url">{{ .AuthorizeCodeURL }}</p>
     </div>
 </body>
 </html>

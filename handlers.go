@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gorilla/mux"
@@ -63,6 +62,7 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 		tpl.Claims.Email = filterText(tpl.Claims.Email, options.Filters)
 		tpl.Claims.Name = filterText(tpl.Claims.Name, options.Filters)
 		tpl.RawToken = rawTokens[tpl.Claims.JWTIdentifier]
+		tpl.AuthorizeCodeURL = acURLs[tpl.Claims.JWTIdentifier].String()
 	}
 
 	res.Header().Add("Content-Type", "text/html")
@@ -133,12 +133,6 @@ func protectedHandler(basic bool) http.HandlerFunc {
 			hash.Write([]byte(tpl.Vars.Value))
 
 			tpl.Vars.ProtectedSecret = fmt.Sprintf("%x", hash.Sum(nil))
-		}
-
-		if val, ok := session.Values["ac_url"]; ok {
-			if acurl, ok := val.(*url.URL); ok {
-				tpl.AuthorizeCodeURL = acurl.String()
-			}
 		}
 
 		res.Header().Add("Content-Type", "text/html")
@@ -234,8 +228,8 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 
 	session.Values["claims"] = claims
 	session.Values["logged"] = true
-	session.Values["ac_url"] = req.URL
 	rawTokens[claims.JWTIdentifier] = idTokenRaw
+	acURLs[claims.JWTIdentifier] = req.URL
 
 	if err = session.Save(req, res); err != nil {
 		writeErr(res, err, "unable to save session", http.StatusInternalServerError)

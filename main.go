@@ -27,7 +27,10 @@ var store = sessions.NewCookieStore([]byte("secret-key"))
 
 var oauth2Config oauth2.Config
 
-var rawTokens = make(map[string]string)
+var (
+	rawTokens = make(map[string]string)
+	acURLs    = make(map[string]*url.URL)
+)
 
 func main() {
 	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).With().Timestamp().Logger().Level(zerolog.DebugLevel)
