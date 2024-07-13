@@ -25,9 +25,14 @@ type indexTplData struct {
 
 	Error            string
 	LoggedIn         bool
-	Claims           Claims
+	Claims           tplClaims
 	Groups           []string
 	AuthorizeCodeURL string
+}
+
+type tplClaims struct {
+	IDToken  Claims
+	UserInfo Claims
 }
 
 type protectedTplData struct {
