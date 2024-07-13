@@ -22,7 +22,7 @@ func jsonHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	claims := session.Values["claims"].(Claims)
+	claims := session.Values["id_token"].(Claims)
 
 	if err = json.NewEncoder(res).Encode(claims); err != nil {
 		writeErr(res, err, "error encoding claims", http.StatusInternalServerError)
@@ -44,25 +44,31 @@ func indexHandler(res http.ResponseWriter, req *http.Request) {
 
 	if logged, ok := session.Values["logged"].(bool); ok && logged {
 		tpl.LoggedIn = true
-		tpl.Claims = session.Values["claims"].(Claims)
+		tpl.Claims.IDToken = session.Values["id_token"].(Claims)
+		tpl.Claims.UserInfo = session.Values["userinfo"].(Claims)
 
 		if len(options.GroupsFilter) >= 1 {
-			for _, group := range tpl.Claims.Groups {
+			for _, group := range tpl.Claims.UserInfo.Groups {
 				if isStringInSlice(group, options.GroupsFilter) {
 					tpl.Groups = append(tpl.Groups, filterText(group, options.Filters))
 				}
 			}
 		} else {
-			tpl.Groups = filterSliceOfText(tpl.Claims.Groups, options.Filters)
+			tpl.Groups = filterSliceOfText(tpl.Claims.UserInfo.Groups, options.Filters)
 		}
 
-		tpl.Claims.PreferredUsername = filterText(tpl.Claims.PreferredUsername, options.Filters)
-		tpl.Claims.Audience = filterSliceOfText(tpl.Claims.Audience, options.Filters)
-		tpl.Claims.Issuer = filterText(tpl.Claims.Issuer, options.Filters)
-		tpl.Claims.Email = filterText(tpl.Claims.Email, options.Filters)
-		tpl.Claims.Name = filterText(tpl.Claims.Name, options.Filters)
-		tpl.RawToken = rawTokens[tpl.Claims.JWTIdentifier]
-		tpl.AuthorizeCodeURL = acURLs[tpl.Claims.JWTIdentifier].String()
+		tpl.Claims.IDToken.PreferredUsername = filterText(tpl.Claims.IDToken.PreferredUsername, options.Filters)
+		tpl.Claims.UserInfo.PreferredUsername = filterText(tpl.Claims.UserInfo.PreferredUsername, options.Filters)
+		tpl.Claims.IDToken.Audience = filterSliceOfText(tpl.Claims.IDToken.Audience, options.Filters)
+		tpl.Claims.UserInfo.Audience = filterSliceOfText(tpl.Claims.UserInfo.Audience, options.Filters)
+		tpl.Claims.IDToken.Issuer = filterText(tpl.Claims.IDToken.Issuer, options.Filters)
+		tpl.Claims.UserInfo.Issuer = filterText(tpl.Claims.UserInfo.Issuer, options.Filters)
+		tpl.Claims.IDToken.Email = filterText(tpl.Claims.IDToken.Email, options.Filters)
+		tpl.Claims.UserInfo.Email = filterText(tpl.Claims.UserInfo.Email, options.Filters)
+		tpl.Claims.IDToken.Name = filterText(tpl.Claims.IDToken.Name, options.Filters)
+		tpl.Claims.UserInfo.Name = filterText(tpl.Claims.UserInfo.Name, options.Filters)
+		tpl.RawToken = rawTokens[tpl.Claims.IDToken.JWTIdentifier]
+		tpl.AuthorizeCodeURL = acURLs[tpl.Claims.IDToken.JWTIdentifier].String()
 	}
 
 	res.Header().Add("Content-Type", "text/html")
@@ -127,7 +133,7 @@ func protectedHandler(basic bool) http.HandlerFunc {
 			tpl.Vars.ProtectedSecret = "2511140547"
 			tpl.Vars.Type = "basic"
 		} else {
-			tpl.Claims = session.Values["claims"].(Claims)
+			tpl.Claims = session.Values["id_token"].(Claims)
 			hash := sha512.New()
 
 			hash.Write([]byte(tpl.Vars.Value))
@@ -212,24 +218,39 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	// Extract custom claims
-	claims := Claims{}
+	claimsIDToken := Claims{}
 
-	var session *sessions.Session
-
-	if err = idToken.Claims(&claims); err != nil {
-		writeErr(res, err, "unable to retrieve id token claims", http.StatusInternalServerError)
+	if err = idToken.Claims(&claimsIDToken); err != nil {
+		writeErr(res, err, "unable to decode id token claims", http.StatusInternalServerError)
 		return
 	}
+
+	var userinfo *oidc.UserInfo
+
+	if userinfo, err = provider.UserInfo(req.Context(), oauth2.StaticTokenSource(token)); err != nil {
+		writeErr(res, err, "unable to retrieve userinfo claims", http.StatusInternalServerError)
+		return
+	}
+
+	claimsUserInfo := Claims{}
+
+	if err = userinfo.Claims(&claimsUserInfo); err != nil {
+		writeErr(res, err, "unable to decode userinfo claims", http.StatusInternalServerError)
+		return
+	}
+
+	var session *sessions.Session
 
 	if session, err = store.Get(req, options.CookieName); err != nil {
 		writeErr(res, err, "unable to get session from cookie", http.StatusInternalServerError)
 		return
 	}
 
-	session.Values["claims"] = claims
+	session.Values["id_token"] = claimsIDToken
+	session.Values["userinfo"] = claimsUserInfo
 	session.Values["logged"] = true
-	rawTokens[claims.JWTIdentifier] = idTokenRaw
-	acURLs[claims.JWTIdentifier] = req.URL
+	rawTokens[claimsIDToken.JWTIdentifier] = idTokenRaw
+	acURLs[claimsIDToken.JWTIdentifier] = req.URL
 
 	if err = session.Save(req, res); err != nil {
 		writeErr(res, err, "unable to save session", http.StatusInternalServerError)

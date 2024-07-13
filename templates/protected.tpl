@@ -21,8 +21,8 @@
     <div id="container">
         {{- if eq .Vars.Type "user" }}
         <p id="message">This is the protected user endpoint</p>
-        {{- if stringsEqualFold .Claims.PreferredUsername .Vars.Value }}
-        <p id="message-grant">Access Granted. Your username is '<span id="user">{{ .Claims.PreferredUsername }}</span>'.</p>
+        {{- if stringsEqualFold .Claims.IDToken.PreferredUsername .Vars.Value }}
+        <p id="message-grant">Access Granted. Your username is '<span id="user">{{ .Claims.IDToken.PreferredUsername }}</span>'.</p>
         <p id="access-granted">1</p>
         <p id="protected-secret">{{ .Vars.ProtectedSecret }}</p>
         {{- else }}
@@ -31,7 +31,7 @@
         {{- end }}
         {{- else if eq .Vars.Type "group" }}
         <p id="message">This is the protected group endpoint</p>
-        {{- if (isStringInSlice .Vars.Value .Claims.Groups) }}
+        {{- if (isStringInSlice .Vars.Value .Claims.IDToken.Groups) }}
         <p id="grant-message">Access Granted. You have the group '<span id="group">{{ .Vars.Value }}</span>'.</p>
         <p id="access-granted">1</p>
         <p id="protected-secret">{{ .Vars.ProtectedSecret }}</p>

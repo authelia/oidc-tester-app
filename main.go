@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/gob"
 	"fmt"
+	"github.com/gorilla/sessions"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -21,11 +21,12 @@ import (
 
 var options Options
 
-var provider *oidc.Provider
-var verifier *oidc.IDTokenVerifier
-var store = sessions.NewCookieStore([]byte("secret-key"))
-
-var oauth2Config oauth2.Config
+var (
+	provider     *oidc.Provider
+	oauth2Config oauth2.Config
+	verifier     *oidc.IDTokenVerifier
+	store        = sessions.NewCookieStore([]byte("secret-key"))
+)
 
 var (
 	rawTokens = make(map[string]string)
