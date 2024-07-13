@@ -62,10 +62,10 @@
         <p>Locale (ID Token): <span id="claim-id-token-locale">{{ .Claims.IDToken.Locale }}</span></p>
         <p>Updated At: <span id="claim-updated_at">{{ .Claims.UserInfo.UpdatedAt }}</span></p>
         <p>Updated At (ID Token): <span id="claim-id-token-updated_at">{{ .Claims.IDToken.UpdatedAt }}</span></p>
-        <p>Email: <span id="claim-email">{{ .Claims.UserInfo.EmailAlts }}</span></p>
-        <p>Email (ID Token): <span id="claim-id-token-email">{{ .Claims.IDToken.EmailAlts }}</span></p>
-        <p>Email Alts: <span id="claim-alt_emails">{{ .Claims.UserInfo.Email }}</span></p>
-        <p>Email Alts (ID Token): <span id="claim-id-token-alt_emails">{{ .Claims.IDToken.Email }}</span></p>
+        <p>Email: <span id="claim-email">{{ .Claims.UserInfo.Email }}</span></p>
+        <p>Email (ID Token): <span id="claim-id-token-email">{{ .Claims.IDToken.Email }}</span></p>
+        <p>Email Alts: <span id="claim-alt_emails">{{ .Claims.UserInfo.EmailAlts }}</span></p>
+        <p>Email Alts (ID Token): <span id="claim-id-token-alt_emails">{{ .Claims.IDToken.EmailAlts }}</span></p>
         <p>Email Verified: <span id="claim-email_verified">{{ .Claims.UserInfo.EmailVerified }}</span></p>
         <p>Email Verified (ID Token): <span id="claim-id-token-email_verified">{{ .Claims.IDToken.EmailVerified }}</span></p>
         <p>Phone Number: <span id="claim-phone_number">{{ .Claims.UserInfo.PhoneNumber }}</span></p>
