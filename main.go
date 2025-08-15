@@ -19,6 +19,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+var version = "1.0"
+
 var options Options
 
 var (
@@ -40,7 +42,7 @@ func main() {
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	rootCmd := &cobra.Command{Use: "oidc-tester-app", RunE: root}
+	rootCmd := &cobra.Command{Use: "oidc-tester-app", RunE: root, Version: version}
 
 	rootCmd.Flags().StringVar(&options.Host, "host", "0.0.0.0", "Specifies the tcp host to listen on")
 	rootCmd.Flags().IntVar(&options.Port, "port", 8080, "Specifies the port to listen on")
@@ -100,7 +102,7 @@ func root(cmd *cobra.Command, args []string) (err error) {
 	r.HandleFunc("/jwt.json", jsonHandler)
 	r.HandleFunc("/protected", protectedHandler(true))
 	r.HandleFunc("/protected/{type:group|user}/{name}", protectedHandler(false))
-	r.PathPrefix("/static/").Handler(staticHandler)
+	r.PathPrefix(staticURLPath).Handler(staticHandler)
 
 	r.NotFoundHandler = &ErrorHandler{http.StatusNotFound}
 	r.MethodNotAllowedHandler = &ErrorHandler{http.StatusMethodNotAllowed}

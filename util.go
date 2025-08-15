@@ -7,6 +7,17 @@ import (
 	"strings"
 )
 
+const staticURLPath = "/static/"
+
+func assetURL(u string) string {
+	delim := "?v="
+	if strings.Contains(u, "?") {
+		delim = "&v="
+	}
+
+	return staticURLPath + u + delim + version
+}
+
 func isStringInSlice(s string, slice []string) bool {
 	for _, x := range slice {
 		if s == x {
