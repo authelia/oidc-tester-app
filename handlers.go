@@ -267,6 +267,10 @@ func oauthCallbackHandler(res http.ResponseWriter, req *http.Request) {
 	http.Redirect(res, req, "/", http.StatusFound)
 }
 
+func healthHandler(res http.ResponseWriter, req *http.Request) {
+	fmt.Fprint(res, "OK")
+}
+
 func writeErr(res http.ResponseWriter, err error, msg string, statusCode int) {
 	switch {
 	case err == nil:
