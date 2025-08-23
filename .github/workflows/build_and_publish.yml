@@ -1,8 +1,11 @@
-name: 'Build'
+name: 'Build and Publish'
 on:
   push:
     branches:
       - 'master'
+permissions:
+  contents: 'read'
+  packages: 'write'
 jobs:
   build:
     name: 'Docker'
