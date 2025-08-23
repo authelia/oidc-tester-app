@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommitTypeAll(build)",
+    ":separatePatchReleases",
+    "workarounds:doNotUpgradeFromAlpineStableToEdge"
+  ],
+  "ignorePresets": [
+    ":prHourlyLimit2",
+    ":semanticPrefixFixDepsChoreOthers",
+    "workarounds:all"
+  ],
+  "enabledManagers": [
+    "dockerfile",
+    "gomod",
+    "npm"
+  ],
+  "postUpdateOptions": [
+    "gomodTidy"
+  ]
+}
