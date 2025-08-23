@@ -10,6 +10,9 @@ import (
 //go:embed templates/*
 var templateFS embed.FS
 
+//go:embed static/*
+var staticFS embed.FS
+
 var (
 	indexTpl, protectedTpl, errorTpl *template.Template
 

@@ -100,6 +100,7 @@ func root(cmd *cobra.Command, args []string) (err error) {
 	r.HandleFunc("/jwt.json", jsonHandler)
 	r.HandleFunc("/protected", protectedHandler(true))
 	r.HandleFunc("/protected/{type:group|user}/{name}", protectedHandler(false))
+	r.PathPrefix("/static/").Handler(staticHandler)
 
 	r.NotFoundHandler = &ErrorHandler{http.StatusNotFound}
 	r.MethodNotAllowedHandler = &ErrorHandler{http.StatusMethodNotAllowed}

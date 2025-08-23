@@ -13,7 +13,7 @@
     <meta property="og:type" content="website">
     {{ if not (eq .Description "") }}<meta property="og:description" content="{{ .Description }}">{{ end }}
 
-    <link rel="stylesheet" href="styles.css?v=1.0">
+    <link rel="stylesheet" href="/static/styles.css?v=1.0">
 
 </head>
 

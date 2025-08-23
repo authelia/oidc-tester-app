@@ -13,6 +13,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+var staticHandler = http.FileServer(http.FS(staticFS))
+
 func jsonHandler(res http.ResponseWriter, req *http.Request) {
 	res.Header().Add("Content-Type", "application/json")
 	session, err := store.Get(req, options.CookieName)
