@@ -5,6 +5,7 @@ on:
       - 'master'
 permissions:
   contents: 'read'
+  packages: 'write'
 jobs:
   build:
     name: 'Docker'
