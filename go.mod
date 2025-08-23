@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/coreos/go-oidc/v3 v3.15.0
-	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/sessions v1.4.0
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.7.0
