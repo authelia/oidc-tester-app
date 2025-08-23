@@ -91,6 +91,7 @@ func root(cmd *cobra.Command, args []string) (err error) {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", indexHandler)
+	r.HandleFunc("/health", healthHandler)
 	r.HandleFunc("/error", errorHandler)
 	r.HandleFunc("/login", loginHandler)
 	r.HandleFunc("/logout", logoutHandler)
