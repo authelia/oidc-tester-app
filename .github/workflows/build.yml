@@ -7,8 +7,6 @@ jobs:
   build:
     name: 'Docker'
     runs-on: 'ubuntu-latest'
-    permissions:
-      packages: 'write'
     env:
       REGISTRY: 'ghcr.io'
       IMAGE_NAME: 'authelia/oidc-tester-app'
@@ -34,6 +32,6 @@ jobs:
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
           context: .
-          push: true
+          push: false
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
