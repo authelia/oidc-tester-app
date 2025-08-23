@@ -5,11 +5,16 @@ on:
       - 'master'
 permissions:
   contents: 'read'
-  packages: 'write'
 jobs:
   build:
     name: 'Docker'
     runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+      packages: 'write'
+    env:
+      REGISTRY: 'ghcr.io'
+      IMAGE_NAME: 'authelia/oidc-tester-app'
     steps:
       - name: 'Harden Runner'
         uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
@@ -23,7 +28,7 @@ jobs:
       - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: 'Build and Publish'
@@ -32,6 +37,6 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/authelia/oidc-tester-app:latest
-            ghcr.io/authelia/oidc-tester-app:${{ github.sha }}
-            ghcr.io/authelia/oidc-tester-app:master-${{ env.SHORT_SHA }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:master-${{ env.SHORT_SHA }}
