@@ -20,6 +20,7 @@ var (
 		"stringsJoin":      strings.Join,
 		"stringsEqualFold": strings.EqualFold,
 		"isStringInSlice":  isStringInSlice,
+		"assetURL":         assetURL,
 	}
 )
 
