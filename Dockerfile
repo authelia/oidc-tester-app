@@ -1,13 +1,18 @@
-FROM golang:1.25.0-alpine3.22 AS builder
+FROM docker.io/library/golang:1.25.0-alpine3.22 AS builder
 
 WORKDIR /go/src/app
+
+COPY go.mod go.sum ./
+RUN go mod download \
+    && go install github.com/mavolin/hashets/cmd/hashets@v1.3.0
+
 COPY . .
+RUN go generate ./... \
+    && go build \
+      -ldflags '-s -w' \
+      -o oidc-tester-app .
 
-RUN go get -d -v ./...
-RUN go install -v ./...
-RUN go build -ldflags '-s -w' -o oidc-tester-app *.go
-
-FROM alpine:3.22.1
+FROM docker.io/library/alpine:3.22.1
 
 RUN apk --no-cache add ca-certificates tzdata bash
 

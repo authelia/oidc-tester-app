@@ -10,12 +10,7 @@ import (
 const staticURLPath = "/static/"
 
 func assetURL(u string) string {
-	delim := "?v="
-	if strings.Contains(u, "?") {
-		delim = "&v="
-	}
-
-	return staticURLPath + u + delim + version
+	return staticURLPath + staticFileNames.Get(u)
 }
 
 func isStringInSlice(s string, slice []string) bool {

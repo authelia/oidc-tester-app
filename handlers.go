@@ -4,16 +4,27 @@ import (
 	"crypto/sha512"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"net/http"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/mavolin/hashets/hashets"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 )
 
-var staticHandler = http.FileServer(http.FS(staticFS))
+//go:generate hashets -map-only -o . -var staticFileNames static
+
+func staticHandler(prefix string) http.Handler {
+	static, _ := fs.Sub(staticFS, "static")
+	handler := http.FileServer(http.FS(
+		hashets.WrapPrecomputedFS(static, staticFileNames),
+	))
+
+	return http.StripPrefix(prefix, handler)
+}
 
 func jsonHandler(res http.ResponseWriter, req *http.Request) {
 	res.Header().Add("Content-Type", "application/json")
