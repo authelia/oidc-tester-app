@@ -3,7 +3,7 @@ module github.com/authelia/oidc-tester-app
 go 1.23.0
 
 require (
-	github.com/coreos/go-oidc/v3 v3.15.0
+	github.com/coreos/go-oidc/v3 v3.16.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/sessions v1.4.0
 	github.com/rs/zerolog v1.34.0
