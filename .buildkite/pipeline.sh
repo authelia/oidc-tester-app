@@ -5,6 +5,18 @@ REGISTRIES="docker.io ghcr.io"
 REPOSITORY="authelia/oidc-tester-app"
 TAGS=""
 
+if [[ ${BUILDKITE_BRANCH} =~ ^gh-readonly-queue/.* ]]; then
+  buildkite-agent annotate --style "info" --context "ctx-info" < .buildkite/annotations/merge-queue
+
+cat << EOF
+steps:
+  - label: ":github: Merge Queue"
+    skip: "Skipping CI/CD steps for merge queue build."
+EOF
+
+  exit 0
+fi
+
 if [[ "${BUILDKITE_BRANCH}" =~ ^renovate/ ]]; then
   TAGS="renovate"
 elif [[ "${BUILDKITE_BRANCH}" != "master" ]] && [[ ! "${BUILDKITE_BRANCH}" =~ .*:.* ]]; then
