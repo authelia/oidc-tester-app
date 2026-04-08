@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+if [[ "${BUILDKITE_LABEL}" == ":docker: Build and Deploy" ]]; then
+  echo ${DOCKER_PASSWORD} | docker login docker.io -u ${DOCKER_USERNAME} --password-stdin
+  echo ${GHCR_PASSWORD} | docker login ghcr.io -u ${GHCR_USERNAME} --password-stdin
+fi
