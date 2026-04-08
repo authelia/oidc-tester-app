@@ -10,11 +10,11 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags '-s -w
 
 FROM alpine:3.23.3
 
-RUN apk --no-cache add ca-certificates tzdata bash
+RUN apk --no-cache add bash ca-certificates tzdata
 
 WORKDIR /app
 
-COPY --from=builder /go/src/app/oidc-tester-app oidc-tester-app
+COPY --link --from=builder /go/src/app/oidc-tester-app oidc-tester-app
 
 ENV PATH="${PATH}:/app"
 
