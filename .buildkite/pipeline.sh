@@ -23,7 +23,7 @@ for REGISTRY in ${REGISTRIES}; do for TAG in ${TAGS}; do BUILDTAGS+="-t ${REGIST
 cat << EOF
 steps:
   - label: ":docker: Build and Deploy"
-    command: "docker build ${BUILDTAGS::-1} --label org.opencontainers.image.source=https://github.com/${REPOSITORY} --provenance mode=max,reproducible=true --sbom true --builder buildx --progress plain --pull --push ."
+    command: "docker build ${BUILDTAGS::-1} --label org.opencontainers.image.source=https://github.com/${REPOSITORY} --platform linux/amd64,linux/arm64 --provenance mode=max,reproducible=true --sbom true --builder buildx --progress plain --pull --push ."
 EOF
 if [[ "${BUILDKITE_BRANCH}" == "master" ]]; then
 cat << EOF
