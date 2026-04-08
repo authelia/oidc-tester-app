@@ -13,8 +13,12 @@
   ],
   "enabledManagers": [
     "dockerfile",
+    "github-actions",
     "gomod",
     "npm"
+  ],
+  "labels": [
+    "dependencies"
   ],
   "packageRules": [
     {
@@ -27,6 +31,30 @@
       "automergeType": "pr",
       "platformAutomerge": true
     },
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "addLabels": [
+        "docker"
+      ]
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "addLabels": [
+        "github_actions"
+      ]
+    },
+    {
+      "matchDatasources": [
+        "go"
+      ],
+      "addLabels": [
+        "go"
+      ]
+    }
   ],
   "postUpdateOptions": [
     "gomodTidy"
