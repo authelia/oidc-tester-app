@@ -11,6 +11,7 @@ if [[ ${BUILDKITE_BRANCH} =~ ^gh-readonly-queue/.* ]]; then
 cat << EOF
 steps:
   - label: ":github: Merge Queue"
+    command: ":"
     skip: "Skipping CI/CD steps for merge queue build."
 EOF
 
