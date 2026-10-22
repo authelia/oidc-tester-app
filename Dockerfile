@@ -8,7 +8,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags '-s -w' -o oidc-tester-app *.go
 
-FROM alpine:3.24.2
+FROM alpine:3.24.3
 
 RUN apk --no-cache add bash ca-certificates tzdata
 
